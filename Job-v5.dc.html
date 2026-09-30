@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My jobs (mobile)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:#F4F2EC;color:#1D1D1B}
+a{color:#1D1D1B}a:hover{color:#6B5200}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; display: flex; flex-direction: column; background: #F4F2EC; overflow: hidden">
+<header style="height: 64px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 8px; background: #1D1D1B; color: #F4F2EC">
+<a href="Live-v5.dc.html" aria-label="Back to site CZ-0012" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F4F2EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<span style="display: flex; flex-direction: column"><span style="font-weight: 600; font-size: 15px">My jobs</span><span style="font-size: 11px; color: #B9B4A8">Night install crew A · 2 open</span></span>
+</header>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding: 14px; overflow: hidden">
+<div style="background: #FFFFFF; border: 2px solid #C8423B; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column">
+<div style="padding: 10px 12px; background: #FBEDEA; display: flex; align-items: center; gap: 8px"><span style="padding: 1px 8px; border-radius: 10px; background: #C8423B; color: #FFFFFF; font-size: 11px; font-weight: 600">Critical · new</span><span style="font-size: 12px; color: #8E2F20">Due before 05:00</span></div>
+<div style="padding: 12px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 17px; font-weight: 600">Replace crash cushion CC-1</span>
+<span style="font-size: 13px; color: #5A574F">CZ-0012 · Eastern Fwy inbound · taper start</span>
+<span style="font-size: 13px">Why: impact detected 21:15. Cushion is non-compliant until replaced.</span>
+<span style="font-size: 12px; color: #5A574F">Assigned by RPM Ops · 21:17 · client notified</span>
+</div>
+<div style="height: 110px; position: relative; background: #F3F2EE; border-top: 1px solid #EEEAE1">
+<div style="position: absolute; left: 0; right: 0; top: 40px; height: 16px; background: #FFFFFF; border-top: 2px solid #D6D3CB; border-bottom: 2px solid #D6D3CB"></div>
+<div style="position: absolute; left: 0; right: 0; top: 46px; height: 4px; background: #3FA34D"></div>
+<div style="position: absolute; left: 150px; top: 28px; width: 26px; height: 26px; border-radius: 13px; background: #C8423B; border: 3px solid #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.3)"></div>
+<div style="position: absolute; left: 60px; top: 78px; font-size: 11px; color: #5A574F">2.1 km · 4 min</div>
+</div>
+<div style="padding: 12px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #EEEAE1">
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 36px"><input type="checkbox" style="width: 20px; height: 20px">Set up upstream traffic control</label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 36px"><input type="checkbox" style="width: 20px; height: 20px">Replace cushion</label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 36px"><input type="checkbox" style="width: 20px; height: 20px">Photo proof</label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 36px"><input type="checkbox" style="width: 20px; height: 20px">Mark compliant</label>
+</div>
+<div style="display: flex; gap: 8px; padding: 0 12px 12px">
+<button type="button" style="flex-grow: 1; height: 48px; border: 1px solid #1D1D1B; border-radius: 10px; background: #FFFFFF; font: inherit; font-weight: 600">Navigate</button>
+<button type="button" style="flex-grow: 1; height: 48px; border: none; border-radius: 10px; background: #E0A100; font: inherit; font-weight: 600">Start job</button>
+</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #D8D3C7; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 4px">
+<span style="display: flex; align-items: center; gap: 8px"><span style="padding: 1px 8px; border-radius: 10px; background: #FBF3DC; color: #6B5200; font-size: 11px; font-weight: 600">Warning</span><span style="font-size: 12px; color: #5A574F">This shift</span></span>
+<span style="font-size: 15px; font-weight: 600">Reposition radar R-12</span>
+<span style="font-size: 12px; color: #5A574F">38 m from planned spot · CZ-0012</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

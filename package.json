@@ -1,0 +1,11 @@
+{
+  "name": "site-memory",
+  "version": "0.5.0",
+  "private": true,
+  "description": "RP (Revolutionary Planning): planning tool prototype for RPM Hire (FEIT Hackathon 2026, Problem 3)",
+  "scripts": {
+    "start": "npx --yes serve@14 . -l 3000",
+    "deploy:vercel": "npx --yes vercel@latest --prod",
+    "deploy:netlify": "npx --yes netlify-cli@latest deploy --prod --dir ."
+  }
+}

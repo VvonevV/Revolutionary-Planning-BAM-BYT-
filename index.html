@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>RP · Revolutionary Planning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: work-site launcher. Dark ink bar, one amber call to action, a grid of the six screens in the order a job moves through them. */
+:root{
+  --ground:#F4F2EC; --surface:#FFFFFF; --ink:#1D1D1B; --muted:#5A574F; --line:#D8D3C7;
+  --amber:#E0A100; --amber-ink:#1D1D1B; --bar:#1D1D1B; --bar-ink:#F4F2EC; --bar-muted:#B9B4A8; --shot:#E7E4DC;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#171714; --surface:#22211E; --ink:#EDEAE2; --muted:#ABA698; --line:#3A3833;
+  --amber:#E8AE1C; --amber-ink:#1D1D1B; --bar:#0E0E0C; --bar-ink:#F4F2EC; --bar-muted:#9E998C; --shot:#2B2A26; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --ground:#171714; --surface:#22211E; --ink:#EDEAE2; --muted:#ABA698; --line:#3A3833;
+  --amber:#E8AE1C; --amber-ink:#1D1D1B; --bar:#0E0E0C; --bar-ink:#F4F2EC; --bar-muted:#9E998C; --shot:#2B2A26; color-scheme:dark }
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);background:var(--ground);color:var(--ink);line-height:1.5}
+.bar{background:var(--bar);color:var(--bar-ink);padding:14px 16px}
+.bar div{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:14px;height:14px;background:var(--amber);border-radius:3px}
+.bar b{font-size:18px}.bar span{color:var(--bar-muted);font-size:14px}
+.bar em{margin-left:auto;font-style:normal;font-family:var(--mono);font-size:12px;color:var(--bar-muted)}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 48px;display:flex;flex-direction:column;gap:24px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(26px,4vw,38px);line-height:1.15;margin:6px 0 10px;text-wrap:balance;max-width:24ch}
+.lead{color:var(--muted);max-width:66ch;margin:0}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.cta{display:inline-flex;align-items:center;height:48px;padding:0 20px;border-radius:8px;background:var(--amber);color:var(--amber-ink);font-weight:600;text-decoration:none}
+.cta:focus-visible,.card:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;text-decoration:none;color:inherit;display:flex;flex-direction:column;min-width:0}
+.card:hover{border-color:var(--ink)}
+.card img{display:block;width:100%;max-width:100%;aspect-ratio:16/10;object-fit:cover;object-position:top left;background:var(--shot);border-bottom:1px solid var(--line)}
+.card.m img{object-fit:contain;object-position:center}
+.card div{padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.card small{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.card b{font-size:15px}.card span{font-size:13px;color:var(--muted)}
+.note{padding:14px 16px;border:1px dashed var(--line);border-radius:8px;font-size:13px;color:var(--muted)}
+code{font-family:var(--mono);font-size:12px}
+</style>
+
+<header class="bar"><div><i class="logo"></i><b>RP</b><span>Revolutionary Planning</span><em>RPM Hire · FEIT Hackathon 2026</em></div></header>
+<main>
+  <section>
+    <div class="eyebrow">Problem 3 · Digital tool for temporary infrastructure</div>
+    <h1>Road works have no memory. RP gives every site one.</h1>
+    <p class="lead">Plan a work zone on a map, check it against what RPM's sensors measured at similar sites, and see the cost and a safety score before anything is deployed. Every finished job leaves a snapshot that improves the next plan.</p>
+  </section>
+  <div class="actions">
+    <a class="cta" href="Main-v5.dc.html">Open RP →</a>
+    <span class="hint">Starts on Sites. Try the filters, then + New site.</span>
+  </div>
+  <div class="grid">
+    <a class="card" href="Main-v5.dc.html"><img src="docs/Main-v5.png" alt="Sites screen"><div><small>Before · overview</small><b>Sites</b><span>Filters and search that drive the list, map and KPI tiles. + New site finds similar past jobs.</span></div></a>
+    <a class="card" href="Plan-v5.dc.html"><img src="docs/Plan-v5.png" alt="Plan screen"><div><small>Before · plan</small><b>Plan</b><span>Drag equipment onto the map, barrier evidence check, estimated cost and safety score.</span></div></a>
+    <a class="card" href="Live-v5.dc.html"><img src="docs/Live-v5.png" alt="Live screen"><div><small>During</small><b>Live</b><span>Traffic, safety and community layers, zoom, events and assets search, Action → job.</span></div></a>
+    <a class="card" href="Snapshot-v5.dc.html"><img src="docs/Snapshot-v5.png" alt="Snapshot screen"><div><small>After</small><b>Snapshot</b><span>What the site learned, built from sensor data, plus team notes.</span></div></a>
+    <a class="card m" href="Place-v5.dc.html"><img src="docs/Place-v5.png" alt="Place, mobile screen"><div><small>Crew · mobile</small><b>Place equipment</b><span>Crew places each item where the plan says.</span></div></a>
+    <a class="card m" href="Job-v5.dc.html"><img src="docs/Job-v5.png" alt="My jobs, mobile screen"><div><small>Crew · mobile</small><b>My jobs</b><span>Jobs sent from Live, with location, reason and checklist.</span></div></a>
+  </div>
+  <p class="note">Prototype on sample data shaped like RPM Hire's MySQL schema. Rates, the safety score and event severity are placeholders until agreed with RPM. Sites you create stay for this browser tab only.</p>
+</main>
+
+</body></html>
