@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>RP Map · Bulleen Bend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* RP map: real Eastern Freeway geometry (OpenStreetMap) at the Bulleen Bend.
+   Symbology follows a traffic guidance scheme (TGS) legend: work area = green crosshatch,
+   barrier = separate grey blocks, crash cushion = yellow/black, cones = orange, detour = purple. */
+:root{--ink:#1D1D1B;--muted:#5A574F;--line:#D8D3C7;--ground:#F3F2EE;--amber:#E0A100;--red:#C8423B;--orange:#E39A2D;--green:#3E9B4F;--blue:#1D4F8A;--purple:#6B4FA0;color-scheme:light only}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+#top{flex:none;display:flex;align-items:center;gap:10px;padding:10px 16px;background:#1D1D1B;color:#F4F2EC;font-size:14px;flex-wrap:wrap}
+#top b{font-weight:600}#top .sq{width:14px;height:14px;border-radius:3px;background:var(--amber);display:inline-block}
+#top a{color:#F4F2EC;margin-left:auto;font-size:13px}
+#top .sub{color:#B9B4A8;font-size:12px;font-family:"IBM Plex Mono",monospace}
+body.embed #top{display:none}
+#map{position:relative;flex:1;min-height:0;overflow:hidden;touch-action:none;cursor:grab;background:var(--ground)}
+#map.drag{cursor:grabbing}
+svg#world{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ov{position:absolute;inset:0;pointer-events:none}
+#ov>*{pointer-events:auto}
+.panel{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.12);font-size:12px}
+#layers{left:12px;top:12px;padding:6px 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:calc(100% - 90px)}
+#layers .t{font-size:11px;letter-spacing:.06em;color:var(--muted)}
+#layers label{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+#layers input{width:16px;height:16px;margin:0;accent-color:#1D4F8A}
+.sw{display:inline-block;width:14px;height:4px;border-radius:2px}
+#scen{left:12px;top:56px;padding:4px;display:flex;gap:4px;align-items:center}
+#scen .t{font-size:11px;color:var(--muted);padding:0 6px}
+#scen button{height:30px;padding:0 10px;border-radius:8px;border:1px solid #CFCAC0;background:#fff;font:inherit;font-size:12px;cursor:pointer;color:var(--ink)}
+#scen button.on{background:#1D1D1B;color:#fff;border-color:#1D1D1B}
+#zoom{right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;overflow:hidden;width:44px}
+#zoom button{width:44px;height:40px;border:none;border-bottom:1px solid var(--line);background:#fff;font:inherit;font-size:20px;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center}
+#zoom button.s{font-size:10px;font-weight:600;height:32px}
+#zoom .pct{font-size:10px;font-family:"IBM Plex Mono",monospace;text-align:center;padding:4px 0;color:var(--muted)}
+#legendBtn{left:12px;bottom:28px;height:36px;padding:0 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+#legend{left:12px;bottom:72px;padding:10px 12px;width:290px;max-height:calc(100% - 150px);overflow:auto;display:none}
+#legend.open{display:block}
+#legend h4{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+#legend .row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12px}
+#legend .row svg{flex:none}
+#legend .grp{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:8px 0 2px}
+#chips{right:66px;bottom:28px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;background:none;border:none;box-shadow:none;max-width:70%}
+.chip{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,.12);color:var(--ink)}
+.chip i{width:10px;height:10px;border-radius:5px;display:inline-block}
+.card{position:absolute;right:66px;bottom:72px;width:330px;padding:12px 14px;font-size:12px;line-height:1.45;display:none}
+.card.open{display:block}
+.card h5{margin:0 0 6px;font-size:13px;display:flex;align-items:center;gap:6px}
+.card .x{margin-left:auto;border:none;background:none;font-size:16px;cursor:pointer;color:var(--muted)}
+.card ul{margin:4px 0 0;padding-left:16px}
+.card .src{font-size:10px;color:var(--muted);margin-top:6px}
+.card a{color:var(--blue)}
+.lbl{position:absolute;transform:translate(-50%,-50%);font-size:11px;color:#6E695E;white-space:nowrap;pointer-events:none;font-weight:500;text-shadow:0 0 3px #F3F2EE,0 0 3px #F3F2EE,0 0 3px #F3F2EE}
+.lbl.fwy{font-size:12px;color:#3A3935;font-weight:600;letter-spacing:.02em}
+.lbl.river{color:#4E86B0;font-style:italic}
+.tag{position:absolute;transform:translate(-50%,-50%);padding:2px 7px;background:#fff;border-radius:5px;font-size:11px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.eq{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;padding:0;font:inherit;cursor:pointer}
+.eq .ic{width:30px;height:30px;border-radius:8px;background:#F2C230;border:2px solid #1D1D1B;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.eq .nm{padding:0 4px;background:#fff;border:1px solid var(--line);border-radius:4px;font-size:10px;font-family:"IBM Plex Mono",monospace;white-space:nowrap}
+.eq.sel .ic{border:3px solid var(--blue);outline:4px solid rgba(47,109,181,.35)}
+.eq.crit .ic{background:#F7C9C2;border-color:var(--red)}
+.eq.warn .ic{border-color:var(--orange)}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;padding:3px 8px 3px 3px;background:#fff;border-radius:14px;font-size:11px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);border:2px solid var(--red)}
+.pin b{font-weight:700}.pin .d{width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
+.pin.w{border-color:var(--orange)}.pin.w .d{background:var(--orange)}
+#scale{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);font-size:10px;font-family:"IBM Plex Mono",monospace;color:var(--muted);display:flex;align-items:center;gap:6px;pointer-events:none}
+#scale span{display:block;height:6px;border:1.5px solid #5A574F;border-top:none}
+#attr{position:absolute;right:4px;bottom:4px;font-size:9px;color:var(--muted);background:rgba(255,255,255,.8);padding:1px 4px;border-radius:3px}
+#north{position:absolute;right:18px;top:12px;width:32px;height:32px;border-radius:16px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+body.plan #layers,body.plan #north,body.plan #chips{display:none}
+body.plan #scen{left:auto;right:12px;top:12px}
+body.plan #scen .t,body.plan #scen .lg{display:none}
+body.plan #zoom{top:auto;bottom:90px;transform:none}
+body.plan #legendBtn{bottom:28px}
+#drop{position:absolute;inset:8px;border:3px dashed #1D4F8A;border-radius:12px;background:rgba(47,109,181,.06);pointer-events:none;display:none;align-items:flex-start;justify-content:center;padding-top:70px}
+#drop span{padding:6px 12px;background:#1D4F8A;color:#fff;border-radius:16px;font-size:13px;font-weight:600}
+#drop.on{display:flex}
+.eq.grab{cursor:grab}
+#cam{position:absolute;width:300px;background:#1D1D1B;border:2px solid #1D1D1B;border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.35);transform:translate(-50%,0)}
+#cam .hd{display:flex;align-items:center;gap:6px;padding:5px 8px;color:#fff;font:600 11px "IBM Plex Mono",monospace}
+#cam .hd i{width:8px;height:8px;border-radius:4px;background:#E5484D;display:inline-block;animation:blink 1.2s infinite}
+#cam .hd button{margin-left:auto;border:none;background:none;color:#fff;font-size:15px;cursor:pointer}
+#cam .ft{padding:5px 8px;color:#D8D3C7;font:11px "IBM Plex Mono",monospace;display:flex;justify-content:space-between;background:#111}
+@keyframes blink{50%{opacity:.2}}
+@media (max-width:640px){#legend{width:calc(100% - 24px)}.card{right:12px;left:12px;width:auto}#chips{right:12px;bottom:70px;max-width:calc(100% - 24px)}#legendBtn{bottom:28px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top"><span class="sq"></span><b>RP</b><span>CZ-0012 · Eastern Fwy inbound · Bulleen Bend</span><span class="sub">real geometry · sample site data</span><a href="Live-v5.dc.html">Open in Live screen →</a></div>
+  <div id="map">
+    <svg id="world" aria-label="Map of the Eastern Freeway at the Bulleen Bend with the CZ-0012 work zone"></svg>
+    <div id="ov"></div>
+    <div class="panel" id="layers" aria-label="Map layers"><span class="t">LAYERS</span>
+      <label><input type="checkbox" data-l="traffic" checked><span class="sw" style="background:#3E9B4F"></span>Traffic speed</label>
+      <label><input type="checkbox" data-l="safety"><span class="sw" style="background:#C8423B"></span>Safety</label>
+      <label><input type="checkbox" data-l="community" checked><span class="sw" style="background:#6B4FA0"></span>Community impact</label>
+      <label><input type="checkbox" data-l="equipment" checked><span class="sw" style="background:#E0A100"></span>Equipment</label>
+    </div>
+    <div class="panel" id="scen" role="group" aria-label="Closure type"><span class="t">Closure</span>
+      <button data-m="lane" class="on"><span class="lg">Lane · </span>1 of 3 closed</button><button data-m="full">Full<span class="lg"> carriageway</span></button>
+    </div>
+    <div id="north" aria-hidden="true">N↑</div>
+    <div class="panel" id="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button class="s" id="fSite" title="Fit the work zone">SITE</button><button class="s" id="fBend" title="Fit the Bulleen Bend">BEND</button><button class="s" id="fAll" title="Fit Burke Rd to Doncaster Rd">ALL</button><div class="pct" id="pct">100%</div></div>
+    <button class="panel" id="legendBtn">Legend ▸</button>
+    <div class="panel" id="legend"></div>
+    <div class="panel" id="chips"></div>
+    <div class="panel card" id="cardSafety"></div>
+    <div class="panel card" id="cardComm"></div>
+    <div id="scale"><span id="sbar"></span><em id="stxt" style="font-style:normal"></em></div>
+    <div id="drop"><span>Drop to place on the map</span></div>
+    <div id="attr">Road geometry © OpenStreetMap contributors (ODbL)</div>
+  </div>
+</div>
+<script>
+(function(){
+'use strict';
+/* ---------- data: OpenStreetMap ways, projected to metres (x east, y south) from 37.780 S, 145.089 E ---------- */
+var RAW = `M|EF_OUT|-2620,612 -2525,561 -2471,540 -2373,512 -2337,506 -2271,498 -2067,491 -1987,483 -1929,474 -1779,442 -1667,407 -1589,377 -1498,333 -1455,308 -1265,185 -1181,132 -1157,119 -1127,100 -1062,67 -991,38 -858,-5 -812,-23 -757,-34 -642,-42 -556,-40 -284,-12 -218,-10 -53,-16 50,-30 242,-55 283,-57 319,-58 399,-48 484,-29 561,-13 625,10 650,22 738,79 766,102 811,147 861,213 894,273 909,309 926,361 958,521 967,561 986,622 1005,667 1040,732 1078,789 1108,824 1185,903 1252,977 1465,1218 1554,1312 1681,1432 1827,1546 1894,1586 1974,1623 2029,1643 2077,1656 2175,1675 2279,1691 2429,1722 2475,1736 2604,1785
+M|EF_IN|3136,1945 3027,1949 2941,1940 2872,1925 2824,1911 2752,1883 2581,1796 2526,1773 2438,1746 2316,1721 2152,1704 2111,1697 2017,1674 1950,1649 1861,1608 1786,1558 1754,1532 1541,1322 1504,1282 1411,1180 1238,989 1186,930 1043,781 1001,726 976,685 936,577 914,481 894,367 883,328 864,285 844,251 792,178 702,95 635,55 580,31 512,11 448,0 394,-4 313,-4 119,40 -4,58 -172,71 -302,69 -410,56 -486,41 -562,16 -594,9 -676,3 -771,8 -830,21 -919,50 -998,75 -1085,111 -1207,181 -1384,293 -1524,367 -1642,417 -1724,445 -1829,473 -1916,492 -2216,526 -2274,536 -2351,550 -2415,567 -2470,586 -2534,615 -2635,674 -2697,719 -2769,778
+L|Burke Rd off|-2759,713 -2626,595 -2503,518 -2434,484 -2367,458 -2317,420
+L|Burke Rd on|-2258,575 -2289,591 -2332,598 -2436,617 -2477,626 -2619,684 -2756,779
+L|Thompsons Rd on|-592,-94 -607,-78 -606,-54 -510,-50 -396,-34 -265,-23 50,-30
+L|Bulleen Rd on|-922,100 -1019,106 -1072,123 -1157,169 -1296,251 -1384,293
+L|Doncaster Rd on|2465,1783 2329,1744 2155,1722 2073,1702 2011,1681 1984,1663
+L|Bulleen Rd off|-1181,132 -1175,118 -1132,88 -1062,38 -1033,20 -925,-38
+L|Bulleen Rd off 2|-594,9 -713,15 -801,47 -891,106 -906,113
+L|Doncaster Rd off|958,521 1057,695 1143,797 1194,852 1222,892 1227,919 1224,939
+L|Doncaster Rd off in|1504,1282 1373,1178 1263,1062 1214,1018 1178,1001 1145,1000 1099,1021
+L|Elgar Rd off|2077,1656 2349,1671 2472,1693 2560,1715
+L|NEL temporary on-ramp|1016,1048 1003,1017 1001,973 1013,876 1007,794 1001,766 976,685
+S|Greythorn Rd|942,1092 948,1110 941,1156 760,2322
+T|Bulleen Rd|-750,-1443 -813,-1361 -844,-1286 -876,-971 -888,-915 -934,-778 -1011,-620 -1019,-526 -983,-374 -935,-106 -925,-38 -923,-17 -923,-6 -922,82 -922,100 -927,224 -951,363 -965,442 -973,471 -1030,565 -1055,599 -1558,1300 -1595,1349 -1630,1393
+P|Doncaster Rd|-2202,1483 -2163,1477 -1975,1443 -1751,1403 -1676,1389 -1630,1393 -1606,1398 -1541,1413 -1495,1424 -983,1534 -975,1536 -774,1573 -467,1610 -365,1627 -276,1585 79,1443 282,1361 721,1182 942,1092 964,1082 1025,1058 1114,987 1179,956 1240,933 1296,919 1391,912 1473,915 1511,909 1552,902 1572,898 1786,858 1983,834 2056,832 2157,842 2529,891 2728,895
+P|Thompsons Rd|-925,-38 -874,-52 -704,-79 -608,-106 -484,-182 -195,-368 253,-557 494,-690 579,-752 887,-1055 915,-1083 954,-1120 1022,-1185 1078,-1235 1171,-1288 1361,-1391
+P|Manningham Rd|316,-1419 743,-1253 791,-1219 831,-1166 865,-1091 895,-1045 947,-1015 1075,-925 1136,-892 1388,-843 2042,-731 2156,-710 2220,-685 2259,-662 2322,-612 2397,-553 2523,-456 2581,-412
+P|High St|-2593,1706 -2493,1651 -2318,1553 -2226,1502 -2202,1483
+P|High St E|1402,897 1397,846 1449,707 1539,599 1571,569 1785,324 1922,164 2084,-21 2123,-81 2141,-131 2195,-537 2216,-670 2234,-677
+S|High St N|2234,-677 2255,-729 2270,-771 2296,-814 2328,-870 2521,-1198 2572,-1284
+P|Burke Rd|-2210,-998 -2186,-917 -2177,-736 -2148,-667 -2118,-448 -2154,-320 -2216,-235 -2259,-175 -2266,-132 -2225,14 -2240,105 -2278,238 -2305,368 -2300,449 -2262,546 -2135,725 -2109,814 -2109,867 -2165,1283 -2185,1425 -2202,1483 -2219,1578 -2278,1967
+P|Balwyn Rd|-365,1627 -378,1710 -382,1735 -449,2167
+R|Yarra River|-575,-3162 -595,-3036 -647,-2908 -649,-2854 -621,-2814 -528,-2804 -518,-2785 -629,-2633 -663,-2619 -704,-2646 -718,-2803 -758,-2862 -804,-2884 -905,-2895 -957,-2871 -1031,-2698 -1037,-2651 -1023,-2627 -934,-2574 -794,-2531 -749,-2477 -756,-2437 -836,-2407 -880,-2407 -991,-2483 -1142,-2499 -1208,-2546 -1253,-2548 -1331,-2491 -1400,-2373 -1414,-2282 -1383,-2254 -1231,-2298 -1105,-2375 -1069,-2369 -1032,-2275 -1036,-2170 -1021,-2114 -866,-1962 -875,-1903 -964,-1698 -1082,-1553 -1096,-1504 -1097,-1410 -1113,-1390 -1147,-1382 -1411,-1483 -1487,-1472 -1520,-1451 -1532,-1428 -1521,-1281 -1488,-1188 -1193,-1026 -1192,-888 -1179,-852 -1096,-765 -1090,-718 -1108,-682 -1176,-677 -1334,-853 -1458,-878 -1507,-910 -1541,-966 -1569,-984 -1591,-977 -1697,-880 -1738,-830 -1759,-758 -1762,-657 -1722,-594 -1722,-556 -1867,-250 -1893,-91 -1892,39 -1919,97 -1950,156 -1949,198 -1878,255 -1866,306 -1882,371 -1944,408 -2002,405 -2095,347 -2180,317 -2187,270 -2159,233 -2149,187 -2246,168 -2370,127 -2418,80 -2456,5 -2492,-7 -2560,23 -2653,134 -2681,141 -2738,128 -2786,147 -2909,260 -2936,271 -2964,274 -2975,261 -2971,139 -2993,124 -3015,126 -3046,149 -3107,266 -3135,419 -3111,457 -3092,463 -2987,429 -2934,439 -2922,453 -2933,505 -2999,565 -3152,508 -3205,475 -3280,341 -3285,231 -3300,207 -3414,191 -3490,125 -3620,124`;
+var ROADS = RAW.split('\n').map(function(l){var a=l.split('|');return {t:a[0],n:a[1],p:a[2].trim().split(' ').map(function(s){var q=s.split(',');return [+q[0],+q[1]];})};});
+function road(n){for(var i=0;i<ROADS.length;i++)if(ROADS[i].n===n)return ROADS[i].p;}
+var IN = road('EF_IN'), OUT = road('EF_OUT');
+var DETOUR = '1504,1282 1373,1178 1263,1062 1214,1018 1178,1001 1145,1000 1099,1021 1025,1058 964,1082 942,1092 721,1182 282,1361 79,1443 -276,1585 -365,1627 -467,1610 -774,1573 -975,1536 -983,1534 -1495,1424 -1541,1413 -1606,1398 -1595,1349 -1558,1300 -1055,599 -1030,565 -973,471 -965,442 -951,363 -927,224 -922,100 -1019,106 -1072,123 -1157,169 -1296,251 -1384,293'.split(' ').map(function(s){var q=s.split(',');return [+q[0],+q[1]];});
+
+/* ---------- site plan in chainage (metres along the inbound carriageway, from the east) ---------- */
+var SITE = {
+  divergeDoncaster: 1830, mergeBulleen: 5474,
+  queue: [2270, 2830],            // community: queue on approach (lane closure)
+  taper: [2830, 2945],            // cones merge lane 3 into lane 2
+  cushion: 2952,                  // crash cushion at the leading end of the barrier
+  barrier: [2960, 3180],          // steel barrier, separate from the work area
+  work: [2985, 3170],             // work area (lane 3 + median shoulder) on the outside of the curve
+  bend: [2940, 3700]
+};
+var EQUIP = [
+  {k:'vms1', id:'VMS 1', ch:1300, off:-10, ic:'vms', t:'VMS board · "RIGHT LANE CLOSED 1.5 KM"'},
+  {k:'s60', id:'60', ch:2050, off:-10, ic:'sp', sp:'60', t:'Speed sign 60'},
+  {k:'s40', id:'40', ch:2600, off:-10, ic:'sp', sp:'40', t:'Speed sign 40 (night)'},
+  {k:'cc1', id:'CC-1', ch:SITE.cushion, off:3.5, ic:'cc', t:'Crash cushion', cls:'crit'},
+  {k:'cam2', id:'CAM 2', ch:3230, off:-12, ic:'cam', t:'CCTV trailer'},
+  {k:'r12', id:'R-12', ch:2450, off:-10, ic:'radar', t:'Radar', cls:'warn', moved:[38,-26]},
+  {k:'b4', id:'B-4', ch:3100, off:2.2, ic:'bar', t:'Steel barrier segment B-4'}
+];
+
+/* ---------- geometry helpers ---------- */
+function chain(p){var c=[0];for(var i=1;i<p.length;i++)c.push(c[i-1]+Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]));return c;}
+var INC = chain(IN), OUTC = chain(OUT);
+function at(p,c,s){ // point + unit tangent at chainage s
+  if(s<=0)s=0; var i=1; while(i<c.length-1 && c[i]<s) i++;
+  var a=p[i-1], b=p[i], L=(c[i]-c[i-1])||1, f=Math.min(1,Math.max(0,(s-c[i-1])/L));
+  var tx=(b[0]-a[0])/L, ty=(b[1]-a[1])/L; return {x:a[0]+(b[0]-a[0])*f, y:a[1]+(b[1]-a[1])*f, tx:tx, ty:ty};
+}
+function slice(p,c,s0,s1){var out=[at(p,c,s0)];for(var i=0;i<p.length;i++){if(c[i]>s0&&c[i]<s1){var n=at(p,c,c[i]);out.push({x:p[i][0],y:p[i][1],tx:n.tx,ty:n.ty});}}out.push(at(p,c,s1));
+  // smooth tangents (average neighbours) so offsets don't kink
+  for(var j=1;j<out.length-1;j++){var ax=out[j+1].x-out[j-1].x, ay=out[j+1].y-out[j-1].y, L=Math.hypot(ax,ay)||1; out[j].tx=ax/L; out[j].ty=ay/L;}
+  return out;}
+function off(pts,d){return pts.map(function(q){return [q.x-q.ty*d, q.y+q.tx*d];});} // +d = right of travel
+function dstr(a){return 'M'+a.map(function(q){return q[0].toFixed(1)+' '+q[1].toFixed(1);}).join('L');}
+function band(pts,d0,d1){var A=off(pts,d0), B=off(pts,d1).reverse();return dstr(A.concat(B))+'Z';}
+function full(p){return p.map(function(q){return [q[0],q[1]];});}
+function lenOf(p){var c=chain(p);return c[c.length-1];}
+
+/* ---------- state ---------- */
+var Q = new URLSearchParams(location.search);
+var embed = Q.get('embed')==='1'; if(embed) document.body.classList.add('embed');
+var PLAN = Q.get('screen')==='plan'; if(PLAN) document.body.classList.add('plan');
+var P = {items:[{id:'b1',k:'water',path:true},{id:'c1',k:'cushion',ch:2952,off:3.5,lbl:'CC 1'},{id:'v1',k:'vms',ch:1300,off:-10,lbl:'VMS 1'},{id:'s1',k:'vsl',ch:2050,off:-10,lbl:'SIGN 1'},{id:'s2',k:'vsl',ch:2600,off:-10,lbl:'SIGN 2'},{id:'t1',k:'cctv',ch:3230,off:-12,lbl:'CAM 1'},{id:'r1',k:'radar',ch:2450,off:-10,lbl:'R 1'}], barrierKey:'water', selK:'water', selId:null, ok:false};
+var drag=null;
+var S = {mode: Q.get('mode')==='full'?'full':'lane', L:{traffic:true,safety:PLAN||Q.get('safety')==='1',community:Q.get('community')!=='0',equipment:true}, sel:null, card:null, legend:false};
+var V = {k:0.6, cx:900, cy:600}; // scale px per metre, centre in world coords
+var mapEl=document.getElementById('map'), svg=document.getElementById('world'), ov=document.getElementById('ov');
+var NS='http://www.w3.org/2000/svg';
+
+/* ---------- rendering ---------- */
+function W(){return mapEl.clientWidth;} function H(){return mapEl.clientHeight;}
+function toScreen(x,y){return [(x-V.cx)*V.k+W()/2,(y-V.cy)*V.k+H()/2];}
+function u(){ // lateral exaggeration so lanes, barrier and work area stay separate when zoomed out
+  var hwPx = 7*V.k; return hwPx>=17 ? 1 : 17/hwPx; }
+
+function render(){
+  var k=V.k, U=u(), px=1/k, w=W(), h=H();
+  var t='translate('+(w/2-V.cx*k).toFixed(2)+' '+(h/2-V.cy*k).toFixed(2)+') scale('+k+')';
+  var o=[];
+  o.push('<defs>'+
+    '<pattern id="wa" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45) scale('+(px*1.2)+')"><rect width="8" height="8" fill="#BFF0BF"/><path d="M0 0V8M0 0H8" stroke="#29A83A" stroke-width="2.2"/></pattern>'+
+    '<pattern id="cl" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-45) scale('+(px*1.2)+')"><rect width="10" height="10" fill="#E9E6DF"/><path d="M0 0V10" stroke="#B9B4A8" stroke-width="3"/></pattern>'+
+    '<marker id="arP" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6B4FA0"/></marker>'+
+    '<marker id="arR" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="#C8423B"/></marker>'+
+    '</defs>');
+  o.push('<rect x="-99999" y="-99999" width="199999" height="199999" fill="#F3F2EE"/>');
+  o.push('<g transform="'+t+'">');
+  var fade = !S.L.traffic;
+  // river
+  ROADS.forEach(function(r){ if(r.t==='R') o.push('<path d="'+dstr(r.p)+'" fill="none" stroke="#AFD3EA" stroke-width="'+Math.max(30,9*px)+'" stroke-linejoin="round" stroke-linecap="round"/>'); });
+  // arterials and ramps
+  ROADS.forEach(function(r){ if(r.t==='R'||r.t==='M') return;
+    var wm = r.t==='L'?7:(r.t==='T'||r.t==='P')?12:9, wp = r.t==='L'?4:(r.t==='T'||r.t==='P')?7:5;
+    var sw=Math.max(wm, wp*px);
+    var dash = r.n.indexOf('NEL')>=0 ? ' stroke-dasharray="'+(6*px)+' '+(4*px)+'"':'';
+    o.push('<path d="'+dstr(r.p)+'" fill="none" stroke="#D0CCC2" stroke-width="'+(sw+2*px)+'" stroke-linejoin="round" stroke-linecap="round"/>');
+    o.push('<path d="'+dstr(r.p)+'" fill="none" stroke="'+(fade?'#FAF9F6':'#FFFFFF')+'" stroke-width="'+sw+'" stroke-linejoin="round" stroke-linecap="round"'+dash+'/>');
+  });
+  // freeway carriageways: casing + surface + lane lines
+  [[OUT,OUTC],[IN,INC]].forEach(function(pc){
+    var pts=slice(pc[0],pc[1],0,pc[1][pc[1].length-1]);
+    o.push('<path d="'+band(pts,-7.4*U,7.4*U)+'" fill="#C9C5BA"/>');
+    o.push('<path d="'+band(pts,-7*U,7*U)+'" fill="#FFFFFF"/>');
+    if(U<2.2){ [-1.75,1.75].forEach(function(d){o.push('<path d="'+dstr(off(pts,d*U))+'" fill="none" stroke="#C4BFB3" stroke-width="'+(0.9*px*Math.min(1.6,k))+'" stroke-dasharray="'+(3*U)+' '+(9*U)+'"/>');});
+      [-5.25,5.25].forEach(function(d){o.push('<path d="'+dstr(off(pts,d*U))+'" fill="none" stroke="#D8D3C7" stroke-width="'+(1*px)+'"/>');}); }
+  });
+  var inAll = slice(IN,INC,0,INC[INC.length-1]);
+  // FULL CLOSURE: closed carriageway hatch
+  if(S.mode==='full'){
+    var cl = slice(IN,INC,SITE.divergeDoncaster+30,SITE.mergeBulleen-20);
+    o.push('<path d="'+band(cl,-7*U,7*U)+'" fill="url(#cl)"/>');
+  }
+  // traffic speed (vs posted) as a centre line on each carriageway
+  if(S.L.traffic){
+    var sw2 = Math.max(2.2, 3.2*px);
+    function spd(pc,s0,s1,col,d){o.push('<path d="'+dstr(off(slice(pc[0],pc[1],s0,s1),d))+'" fill="none" stroke="'+col+'" stroke-width="'+sw2+'" stroke-linecap="round" opacity=".9"/>');}
+    var outEnd=OUTC[OUTC.length-1];
+    spd([OUT,OUTC],0,outEnd,'#3E9B4F',-3.5*U);
+    if(S.mode==='lane'){
+      spd([IN,INC],0,2050,'#3E9B4F',-3.5*U); spd([IN,INC],2050,2600,'#E39A2D',-3.5*U);
+      spd([IN,INC],2600,3200,'#C8423B',-3.5*U); spd([IN,INC],3200,INC[INC.length-1],'#3E9B4F',-3.5*U);
+    } else {
+      spd([IN,INC],0,1500,'#3E9B4F',-3.5*U); spd([IN,INC],1500,SITE.divergeDoncaster,'#E39A2D',-3.5*U);
+      spd([IN,INC],SITE.mergeBulleen,INC[INC.length-1],'#3E9B4F',-3.5*U);
+      o.push('<path d="'+dstr(DETOUR)+'" fill="none" stroke="#E39A2D" stroke-width="'+sw2+'" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>');
+    }
+  }
+  // SAFETY: run-off zone on the outside of the bend (right of inbound travel = median side)
+  if(S.L.safety){
+    var b=slice(IN,INC,SITE.bend[0],SITE.bend[1]);
+    o.push('<path d="'+band(b,7.2*U,7.2*U+Math.max(22,26*px))+'" fill="#C8423B" opacity=".16"/>');
+    // straight-on path of a vehicle that misses the curve
+    [3010,3140].forEach(function(s){var a=at(IN,INC,s-60), L=Math.max(120,70*px);
+      o.push('<path d="M'+(a.x-a.ty*0)+' '+a.y+'L'+(a.x+a.tx*L+(-a.ty)*(-0))+' '+(a.y+a.ty*L)+'" stroke="#C8423B" stroke-width="'+(2*px)+'" stroke-dasharray="'+(5*px)+' '+(4*px)+'" fill="none" marker-end="url(#arR)"/>');});
+  }
+  // COMMUNITY: queue on the approach
+  if(S.L.community){
+    if(S.mode==='lane'){ var qq=slice(IN,INC,SITE.queue[0],SITE.queue[1]);
+      o.push('<path d="'+dstr(off(qq,-1.75*U))+'" fill="none" stroke="#6B4FA0" stroke-width="'+Math.max(5,6*px)+'" stroke-dasharray="'+(2*px)+' '+(3*px)+'" opacity=".6"/>'); }
+    else { o.push('<path d="'+dstr(DETOUR)+'" fill="none" stroke="#6B4FA0" stroke-width="'+Math.max(5,5*px)+'" stroke-dasharray="'+(10*px)+' '+(6*px)+'" stroke-linecap="round" stroke-linejoin="round" marker-mid="url(#arP)" marker-end="url(#arP)"/>');
+      var qd=slice(IN,INC,900,SITE.divergeDoncaster); o.push('<path d="'+dstr(off(qd,-1.75*U))+'" fill="none" stroke="#6B4FA0" stroke-width="'+Math.max(5,6*px)+'" stroke-dasharray="'+(2*px)+' '+(3*px)+'" opacity=".6"/>'); }
+  }
+  // WORK AREA (green crosshatch) — its own shape, separate from the barrier
+  var wz=slice(IN,INC,SITE.work[0],SITE.work[1]);
+  o.push('<path d="'+band(wz,3.3*U,7*U)+'" fill="url(#wa)" stroke="#1F8A2E" stroke-width="'+(1.2*px)+'"/>');
+  if(S.mode==='lane'){
+    // taper of cones merging lane 3 into lane 2
+    var n=9; for(var i=0;i<=n;i++){ var s=SITE.taper[0]+(SITE.taper[1]-SITE.taper[0])*i/n, a=at(IN,INC,s), d=(5.25-3.2*i/n)*U;
+      var cx=a.x-a.ty*d, cy=a.y+a.tx*d, r=Math.max(0.9,2.6*px); o.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#F28C28" stroke="#fff" stroke-width="'+(0.8*px)+'"/>'); }
+  } else {
+    // road closed barricades across the carriageway after the Doncaster Rd exit
+    [SITE.divergeDoncaster+30].forEach(function(s){ var a=at(IN,INC,s); var A=[a.x+a.ty*6.5*U,a.y-a.tx*6.5*U], B=[a.x-a.ty*6.5*U,a.y+a.tx*6.5*U];
+      o.push('<path d="M'+A[0]+' '+A[1]+'L'+B[0]+' '+B[1]+'" stroke="#C8423B" stroke-width="'+Math.max(3,5*px)+'" stroke-dasharray="'+(3*px)+' '+(2*px)+'"/>'); });
+  }
+  // BARRIER: steel barrier blocks on the traffic side of the work area (separate element)
+  var br=slice(IN,INC,SITE.barrier[0],SITE.barrier[1]), bl=off(br,2.2*U), bw=Math.max(1.2,4.2*px);
+  var bk = PLAN ? P.barrierKey : 'steel', bcol = bk==='water'?'#D9534A':bk==='concrete'?'#C9C4B8':'#9C9A94';
+  var barSel = PLAN && bk && P.selK===bk && !P.selId;
+  if(bk){
+  if(barSel) o.push('<path d="'+dstr(bl)+'" fill="none" stroke="rgba(47,109,181,.45)" stroke-width="'+(bw+9*px)+'" stroke-linecap="round"/>');
+  o.push('<path d="'+dstr(bl)+'" fill="none" stroke="#1D1D1B" stroke-width="'+(bw+1.6*px)+'" stroke-linecap="butt"/>');
+  o.push('<path d="'+dstr(bl)+'" fill="none" stroke="'+bcol+'" stroke-width="'+bw+'" stroke-dasharray="'+(Math.max(6,10*px))+' '+(Math.max(1,2*px))+'" stroke-linecap="butt"/>');
+  if(bk==='water') o.push('<path d="'+dstr(bl)+'" fill="none" stroke="#FFFFFF" stroke-width="'+(bw*0.35)+'" stroke-dasharray="'+(Math.max(3,5*px))+' '+(Math.max(4,7*px))+'"/>');
+  if(PLAN) o.push('<path data-hit="barrier" d="'+dstr(bl)+'" fill="none" stroke="transparent" stroke-width="'+Math.max(bw,16*px)+'" style="cursor:pointer"/>');
+  }
+  // crash cushion (yellow / black) at the leading end
+  var hasCC = !PLAN || P.items.some(function(i){return i.k==='cushion';});
+  var cc=slice(IN,INC,SITE.cushion-10,SITE.barrier[0]), cl2=off(cc,2.2*U);
+  if(hasCC && bk) o.push('<path d="'+dstr(cl2)+'" fill="none" stroke="#1D1D1B" stroke-width="'+(bw+2.4*px)+'"/><path d="'+dstr(cl2)+'" fill="none" stroke="#F2C230" stroke-width="'+(bw+0.8*px)+'" stroke-dasharray="'+(2*px)+' '+(2*px)+'"/>');
+  o.push('</g>');
+  svg.innerHTML=o.join('');
+  renderOverlay();
+  document.getElementById('pct').textContent=Math.round(V.k/0.6*100)+'%';
+  // scale bar
+  var cand=[20,50,100,200,500,1000,2000], m=cand[0]; for(var j=0;j<cand.length;j++){ if(cand[j]*V.k<=120) m=cand[j]; }
+  document.getElementById('sbar').style.width=(m*V.k)+'px'; document.getElementById('stxt').textContent=m>=1000?(m/1000)+' km':m+' m';
+}
+
+var ICON = {
+  vms:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 20h8"/></svg>',
+  sp:'',
+  arrow:'<svg width="18" height="18" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#1D1D1B"/><path d="M15 12H7m0 0l3-3m-3 3l3 3" stroke="#F2C230" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>',
+  cc:'<svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2" fill="#F2C230" stroke="#1D1D1B" stroke-width="1.6"/><path d="M7 7l4 5-4 5M13 7l4 5-4 5" stroke="#1D1D1B" stroke-width="1.8" fill="none"/></svg>',
+  cam:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2"><rect x="3" y="7" width="13" height="10" rx="2"/><path d="M16 11l5-3v8l-5-3"/></svg>',
+  radar:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2" stroke-linecap="round"><path d="M5 15a7 7 0 0 1 14 0M8 15a4 4 0 0 1 8 0"/><circle cx="12" cy="15" r="1.2" fill="#1D1D1B"/></svg>',
+  sign:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2"><circle cx="12" cy="9" r="6"/><path d="M12 15v7"/></svg>',
+  light:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2"><rect x="8" y="3" width="8" height="6" rx="1"/><path d="M12 9v12M8 21h8"/></svg>',
+  boom:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2"><path d="M4 21V9M4 12h17"/><circle cx="4" cy="12" r="2"/></svg>',
+  plate:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1D1B" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="1"/></svg>',
+  bar:'<svg width="18" height="18" viewBox="0 0 24 24"><rect x="2" y="9" width="6" height="6" fill="#9C9A94" stroke="#1D1D1B"/><rect x="9" y="9" width="6" height="6" fill="#9C9A94" stroke="#1D1D1B"/><rect x="16" y="9" width="6" height="6" fill="#9C9A94" stroke="#1D1D1B"/></svg>'
+};
+function el(tag,cls,html,x,y){var e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; e.style.left=x+'px'; e.style.top=y+'px'; ov.appendChild(e); return e;}
+function sAt(ch,offm){var a=at(IN,INC,ch), d=offm*u(); return toScreen(a.x-a.ty*d, a.y+a.tx*d);}
+
+var CAMSVG='<svg viewBox="0 0 300 160" width="300" height="160" style="display:block;background:#0E1116">'+
+ '<defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B2230"/><stop offset="1" stop-color="#0E1116"/></linearGradient></defs>'+
+ '<rect width="300" height="160" fill="url(#gl)"/>'+
+ '<path d="M110 0 L190 0 L300 160 L0 160 Z" fill="#2A2D33"/>'+
+ '<path d="M137 0 L100 160 M163 0 L200 160" stroke="#C9C5BA" stroke-width="2" stroke-dasharray="10 12"><animate attributeName="stroke-dashoffset" from="0" to="-44" dur="0.6s" repeatCount="indefinite"/></path>'+
+ '<path d="M186 0 L296 160" stroke="#9C9A94" stroke-width="5" stroke-dasharray="14 3"/>'+
+ '<g fill="#F28C28"><path d="M170 30l3 8h-6z"/><path d="M176 50l4 10h-8z"/><path d="M184 75l5 12h-10z"/><path d="M194 105l6 15h-12z"/></g>'+
+ '<rect x="214" y="92" width="60" height="40" fill="#BFF0BF" opacity=".25"/>'+
+ veh(118,'#D8D3C7',22,14,'car 44',1.9,0)+veh(146,'#E0A100',34,24,'TRUCK 61 km/h',2.6,0.8,'#E5484D')+veh(96,'#9FB6D0',20,13,'car 39',2.2,1.6)+
+ '<text x="8" y="152" fill="#fff" font-size="9" font-family="IBM Plex Mono,monospace" opacity=".8">21:58:14 · lane 2 & 3 open → lane 3 closed</text>'+
+ '</svg>';
+function veh(x,col,w,h,lbl,dur,begin,box){ box=box||'#3E9B4F';
+  return '<g><animateTransform attributeName="transform" type="translate" values="'+(x*0.12)+' -20; '+(-x*0.35)+' 170" dur="'+dur+'s" begin="'+begin+'s" repeatCount="indefinite"/>'+
+   '<g transform="translate('+x+' 0)"><rect x="'+(-w/2)+'" y="0" width="'+w+'" height="'+h+'" rx="3" fill="'+col+'"/>'+
+   '<rect x="'+(-w/2-4)+'" y="-4" width="'+(w+8)+'" height="'+(h+8)+'" fill="none" stroke="'+box+'" stroke-width="1.5"/>'+
+   '<text x="'+(-w/2-4)+'" y="-7" fill="'+box+'" font-size="8" font-family="IBM Plex Mono,monospace" font-weight="700">'+lbl+'</text></g></g>'; }
+function camPanel(p,name,sub){ var c=el('div','', '<div class="hd"><i></i>LIVE · '+name+'<span style="font-weight:400;color:#B9B4A8">simulated feed</span><button aria-label="Close camera">×</button></div>'+CAMSVG+'<div class="ft"><span>'+sub+'</span><span>AI classify on</span></div>', p[0], p[1]+26);
+  c.id='cam'; var w=W(); var left=Math.max(160,Math.min(w-160,p[0])); c.style.left=left+'px'; if(p[1]+26+230>H()) c.style.top=Math.max(8,p[1]-240)+'px';
+  c.addEventListener('pointerdown',function(e){e.stopPropagation();});
+  c.querySelector('button').onclick=function(e){ e.stopPropagation(); if(PLAN){ post({rpPickItem:{id:null,k:null}}); } else pick('cam2'); };
+}
+function renderOverlay(){
+  ov.innerHTML=''; var k=V.k, w=W(), h=H();
+  function vis(p){return p[0]>-40&&p[0]<w+40&&p[1]>118&&p[1]<h-40;}
+  // road labels
+  var labels=[['← Eastern Fwy · inbound (citybound)',IN,INC,4300,34,'fwy',0.12],['Eastern Fwy · outbound →',OUT,OUTC,6300,-34,'fwy',0.12],
+    ['Bulleen Rd',null,null,[-1100,850],0,'',0.18],['Doncaster Rd',null,null,[330,1400],0,'',0.18],['Thompsons Rd',null,null,[120,-420],0,'',0.18],['Manningham Rd',null,null,[1500,-870],0,'',0.2],['High St',null,null,[1720,420],0,'',0.2],['Burke Rd',null,null,[-2150,-500],0,'',0.2],['Yarra River',null,null,[-1480,-1080],0,'river',0.15],['NEL works · temp. on-ramp',null,null,[1090,905],0,'',0.5]];
+  labels.forEach(function(L){ if(k<L[6])return; var p;
+    if(L[1]){var a=at(L[1],L[2],L[3]); var dd=L[4]*u(); p=toScreen(a.x-a.ty*dd,a.y+a.tx*dd);} else p=toScreen(L[3][0],L[3][1]);
+    if(vis(p)) el('div','lbl '+L[5],L[0],p[0],p[1]); });
+  // interchange tags
+  if(k>=0.1){ [['Bulleen Rd interchange',[-925,30]],['Doncaster Rd interchange',[1180,1010]]].forEach(function(T){var p=toScreen(T[1][0],T[1][1]); if(vis(p)){var e=el('div','tag',T[0],p[0],p[1]+20); e.style.border='1px solid #CFCAC0'; e.style.fontWeight='600';}}); }
+  function tagAt(ch,offm,px,py){var a=at(IN,INC,ch), p=sAt(ch,offm); return [p[0]-a.ty*px+(py||0)*a.tx, p[1]+a.tx*px+(py||0)*a.ty];}
+  function T(ch,offm,px,html,border,minK,extra){ if(k<(minK||0))return; var p=tagAt(ch,offm,px); if(!vis(p))return; var e=el('div','tag',html,p[0],p[1]); e.style.border=border; if(extra)e.style.cssText+=extra; return e; }
+  T(SITE.work[0]+60,7,130,'<b style="color:#1F8A2E">■</b> Work area · lane 3 + median','1.5px solid #1F8A2E',0.25);
+  if(!PLAN) T(SITE.barrier[0]+160,2.2,-170,'<b>▬</b> Steel barrier 220 m · separate from the work area','1.5px solid #1D1D1B',0.3);
+  else if(P.barrierKey){ var BN={water:'Water-filled',steel:'Steel',concrete:'Concrete'}; var tb=T(SITE.barrier[0]+160,2.2,-170,'<b>▬</b> '+BN[P.barrierKey]+' barrier ×1 · '+(P.ok?'covers observed':'below observed'),'2px solid '+(P.ok?'#2F6B3A':'#C8423B'),0);
+    if(tb){ tb.style.cursor='pointer'; tb.style.fontFamily='IBM Plex Mono,monospace'; tb.setAttribute('role','button'); tb.addEventListener('pointerdown',function(e){e.stopPropagation();}); tb.addEventListener('click',function(e){e.stopPropagation(); post({rpPickBarrier:1});}); } }
+  if(S.mode==='lane') T(SITE.taper[0]-120,0,-150,'Taper · lane 3 merges left · 2 of 3 open','1.5px solid #F28C28',0.3);
+  if(S.mode==='full') T(SITE.divergeDoncaster+60,-7,-120,'<b style="color:#C8423B">ROAD CLOSED</b> · exit at Doncaster Rd','1.5px solid #C8423B',0);
+  if(S.L.safety){
+    var pbb=toScreen(620,-150); if(vis(pbb)&&k>=0.12){var eb=el('div','tag','<b style="color:#C8423B">Bulleen Bend</b> · ~90° left curve in ~750 m',pbb[0],pbb[1]); eb.style.border='1.5px solid #C8423B';}
+    T(3290,7,200,'Run-off side: a car that misses the curve goes straight into lane 3','1px dashed #C8423B',0.3);
+    if(!PLAN){var pc1=sAt(SITE.cushion,3.5); if(vis(pc1)){el('div','pin','<span class="d">!</span><b>Critical</b> · CC-1 hit · ~70 km/h · truck',pc1[0]+120,pc1[1]+30);}
+    var pr1=sAt(2450,-10); if(vis(pr1)){el('div','pin w','<span class="d">!</span><b>Warning</b> · R-12 moved 38 m',pr1[0]-110,pr1[1]+30);}}
+  }
+  if(S.L.community){
+    if(S.mode==='lane'){ T(2530,-3,-130,'queue ~560 m at 8pm','1px solid #6B4FA0',0.2,'font-family:IBM Plex Mono,monospace');
+      T(2150,-3,-150,'No detour: 2 of 3 lanes stay open','1px solid #6B4FA0',0.2); }
+    else { var pd=toScreen(380,1330); if(vis(pd)){var e9=el('div','tag','<b style="color:#6B4FA0">Detour</b> · Doncaster Rd → Bulleen Rd · +1.7 km',pd[0],pd[1]+14); e9.style.border='1.5px solid #6B4FA0';} }
+  }
+  // equipment
+  if(PLAN){
+    var KI={vms:'vms',vsl:'sign',cushion:'cc',cctv:'cam',radar:'radar',arrow:'arrow',water:'bar',steel:'bar',concrete:'bar',lights:'light',tower:'light',boom:'boom',hvm:'bar',plates:'plate'};
+    P.items.forEach(function(it){ if(it.path) return; var p=sAt(it.ch,it.off); if(drag&&drag.id===it.id&&drag.moved) p=[drag.x,drag.y]; if(!vis(p)&&!(drag&&drag.id===it.id))return;
+      var on = P.selId ? P.selId===it.id : P.selK===it.k;
+      var b=el('button','eq grab'+(it.k==='cushion'?' crit':'')+(on?' sel':''),'<span class="ic">'+(ICON[KI[it.k]]||ICON.bar)+'</span>'+(k>=0.25||on?'<span class="nm">'+(it.lbl||it.k)+'</span>':''),p[0],p[1]);
+      b.type='button'; b.setAttribute('aria-label','Select '+(it.lbl||it.k)+', drag to move');
+      b.addEventListener('pointerdown',function(e){ e.stopPropagation(); e.preventDefault(); b.setPointerCapture(e.pointerId); drag={id:it.id,x0:e.clientX,y0:e.clientY,moved:false,x:p[0],y:p[1],sx:p[0],sy:p[1]}; });
+      b.addEventListener('pointermove',function(e){ if(!drag||drag.id!==it.id)return; var sc=scaleOf(); var dx=(e.clientX-drag.x0)/sc, dy=(e.clientY-drag.y0)/sc; if(Math.hypot(dx,dy)>4) drag.moved=true; drag.x=drag.sx+dx; drag.y=drag.sy+dy; if(drag.moved){ b.style.left=drag.x+'px'; b.style.top=drag.y+'px'; } });
+      b.addEventListener('pointerup',function(e){ if(!drag||drag.id!==it.id)return; var d=drag; drag=null; if(d.moved){ var w0=toWorld(d.x,d.y), c=project(w0[0],w0[1]); it.ch=c.ch; it.off=c.off; post({rpMove:{id:it.id,ch:c.ch,off:c.off}}); render(); } else post({rpPickItem:{id:it.id,k:it.k}}); });
+    });
+    var camIt=P.items.filter(function(it){return it.k==='cctv' && !it.path && P.selId===it.id;})[0];
+    if(camIt){ var pc=sAt(camIt.ch,camIt.off); if(vis(pc)) camPanel(pc,(camIt.lbl||'CAM'),'planned view · check the sightline'); }
+  } else if(S.L.equipment){
+    if(S.sel==='cam2'){ var qc=EQUIP.filter(function(x){return x.k==='cam2';})[0], pcm=sAt(qc.ch,qc.off); if(vis(pcm)) setTimeout(function(){ camPanel(pcm,'CAM 2','20 veh/min · trucks 18%'); },0); }
+    EQUIP.forEach(function(q){ if(S.mode==='full' && (q.k==='ab1'||q.k==='s40'||q.k==='s60')) return; if(q.k==='b4' && k<0.8 && S.sel!=='b4') return;
+      var p=sAt(q.ch,q.off); if(!vis(p))return;
+      if(q.moved){ var p0=p; p=[p0[0]+q.moved[0]*Math.min(1,k/0.6)+0,p0[1]+q.moved[1]*Math.min(1,k/0.6)];
+        var ln=document.createElementNS(NS,'svg'); ln.setAttribute('style','position:absolute;left:0;top:0;overflow:visible;pointer-events:none'); ln.innerHTML='<line x1="'+p0[0]+'" y1="'+p0[1]+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="#E39A2D" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="'+p0[0]+'" cy="'+p0[1]+'" r="5" fill="none" stroke="#E39A2D" stroke-width="1.5"/>'; ov.appendChild(ln); }
+      var ic = q.ic==='sp' ? '<span style="width:22px;height:22px;border-radius:11px;background:#fff;border:3px solid #C8423B;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">'+q.sp+'</span>' : ICON[q.ic];
+      var b=el('button','eq'+(q.cls?' '+q.cls:'')+(S.sel===q.k?' sel':''),'<span class="ic">'+ic+'</span>'+(k>=0.25||S.sel===q.k?'<span class="nm">'+q.id+'</span>':''),p[0],p[1]);
+      b.type='button'; b.title=q.t; b.setAttribute('aria-label','Select '+q.id);
+      b.addEventListener('pointerdown',function(e){e.stopPropagation();});
+      b.addEventListener('click',function(e){e.stopPropagation(); pick(q.k);});
+    });
+  }
+}
+function post(m){ try{ parent.postMessage(m,'*'); }catch(e){} }
+function scaleOf(){ var r=mapEl.getBoundingClientRect(); return mapEl.offsetWidth?r.width/mapEl.offsetWidth:1; }
+function toWorld(sx,sy){ return [(sx-W()/2)/V.k+V.cx,(sy-H()/2)/V.k+V.cy]; }
+function project(x,y){ var best={d:1e18,ch:0,off:0}; for(var i=1;i<IN.length;i++){ var a=IN[i-1],b=IN[i],dx=b[0]-a[0],dy=b[1]-a[1],L2=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/L2)); var px=a[0]+dx*t,py=a[1]+dy*t,d=(x-px)*(x-px)+(y-py)*(y-py); if(d<best.d){ var L=Math.sqrt(L2), nx=-dy/L, ny=dx/L; best={d:d,ch:INC[i-1]+t*L,off:((x-px)*nx+(y-py)*ny)}; } }
+  var o2=best.off/u(); o2=Math.max(-60,Math.min(60,o2)); return {ch:Math.round(best.ch),off:Math.round(o2*10)/10}; }
+function pick(key){ S.sel = S.sel===key?null:key; render(); try{ parent.postMessage({rpPick:S.sel},'*'); }catch(e){} }
+
+/* ---------- panels ---------- */
+var LEG = [
+  ['Work zone (TGS symbols)'],
+  ['<rect x="1" y="3" width="30" height="12" fill="url(#lwa)" stroke="#1F8A2E"/>','Work area (crew, plant) · green crosshatch'],
+  ['<rect x="1" y="6" width="30" height="6" fill="#9C9A94" stroke="#1D1D1B"/><path d="M11 6v6M21 6v6" stroke="#1D1D1B"/>','Steel barrier · drawn separately from the work area'],
+  ['<rect x="1" y="5" width="30" height="8" fill="#F2C230" stroke="#1D1D1B"/><path d="M6 5l4 4-4 4M14 5l4 4-4 4M22 5l4 4-4 4" stroke="#1D1D1B" fill="none"/>','Crash cushion at the barrier\'s leading end'],
+  ['<circle cx="6" cy="9" r="3" fill="#F28C28"/><circle cx="16" cy="9" r="3" fill="#F28C28"/><circle cx="26" cy="9" r="3" fill="#F28C28"/>','Traffic cones · taper (lane closure only)'],
+  ['<rect x="4" y="3" width="24" height="12" rx="2" fill="#1D1D1B"/><path d="M21 9h-10m0 0l3-3m-3 3l3 3" stroke="#F2C230" stroke-width="2" fill="none"/>','Arrow board'],
+  ['<rect x="1" y="3" width="30" height="12" fill="url(#lcl)"/><path d="M1 3v12" stroke="#C8423B" stroke-width="3"/>','Carriageway closed (full closure only)'],
+  ['<path d="M1 9h26" stroke="#6B4FA0" stroke-width="4" stroke-dasharray="6 3"/><path d="M26 5l5 4-5 4z" fill="#6B4FA0"/>','Detour · only when traffic flow is stopped'],
+  ['Speed vs posted limit · a safety signal'],
+  ['<path d="M1 9h30" stroke="#3E9B4F" stroke-width="4"/>','At or under the limit · complying'],
+  ['<path d="M1 9h30" stroke="#E39A2D" stroke-width="4"/>','+1 to 15 km/h over'],
+  ['<path d="M1 9h30" stroke="#C8423B" stroke-width="4"/>','+15 km/h or more over · danger to the crew'],
+  ['Safety and community'],
+  ['<rect x="1" y="3" width="30" height="12" fill="#C8423B" opacity=".2"/><path d="M4 12l22-6" stroke="#C8423B" stroke-dasharray="3 2"/>','Run-off side of the curve (outside of bend)'],
+  ['<path d="M1 9h30" stroke="#6B4FA0" stroke-width="6" stroke-dasharray="2 3" opacity=".6"/>','Queue at shift start (community impact)'],
+];
+function legendHTML(){ return '<h4>Legend</h4><svg width="0" height="0" style="position:absolute"><defs><pattern id="lwa" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#BFF0BF"/><path d="M0 0V6M0 0H6" stroke="#29A83A" stroke-width="1.6"/></pattern><pattern id="lcl" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="6" height="6" fill="#E9E6DF"/><path d="M0 0V6" stroke="#B9B4A8" stroke-width="2"/></pattern></defs></svg>'+
+  LEG.map(function(r){ return r.length===1?'<div class="grp">'+r[0]+'</div>':'<div class="row"><svg width="32" height="18" viewBox="0 0 32 18">'+r[0]+'</svg>'+r[1]+'</div>'; }).join('')+
+  '<div class="grp">Rule</div><div style="font-size:11px;color:#5A574F">Barrier and work area are separate items. A detour appears only when the closure stops traffic flow; a 1-of-3 lane closure keeps 2 lanes open, so no detour.</div>'; }
+function cards(){
+  var cs=document.getElementById('cardSafety'), cc=document.getElementById('cardComm');
+  cs.innerHTML='<h5><i style="width:10px;height:10px;border-radius:5px;background:#C8423B;display:inline-block"></i>Why a barrier here · Bulleen Bend<button class="x" aria-label="Close">×</button></h5>'+
+   '<ul><li>Tightest bend on the Eastern Fwy, between the Bulleen Rd and Doncaster Rd interchanges. Inbound it turns ~93° left in ~750 m, a radius of ~460 m (measured from OSM).</li>'+
+   '<li>6 people died on this bend in the 7 years to 2009.</li>'+
+   '<li>After flexible barriers went in, casualty crash risk on the freeway fell ~75%.</li>'+
+   '<li>RPM: a crash cushion on the Eastern Fwy was hit <b>4 times in one month</b> (Tom, 29 Sep). Exact spot to confirm with Tom.</li>'+
+   '<li>The work area sits on the <b>outside</b> of the curve: a car that misses the bend runs straight into lane 3. Low-deflection steel barrier (~0.6 m) lets the crew work closer.</li></ul>'+
+   '<div class="src">Sources: Wikipedia, Eastern Freeway (Melbourne); RPM session notes 29 Sep. Site data is sample data.</div>';
+  var lane=S.mode==='lane';
+  cc.innerHTML='<h5><i style="width:10px;height:10px;border-radius:5px;background:#6B4FA0;display:inline-block"></i>Community impact · '+(lane?'lane closure':'full closure')+'<button class="x" aria-label="Close">×</button></h5>'+
+   (lane?'<ul><li>1 of 3 inbound lanes closed. Traffic keeps flowing on 2 lanes, so <b>no detour</b>.</li><li>Queue at shift start: <b>~560 m</b> (up to ~940 m if demand is 5% higher).<br><span style="color:#5A574F">demand 3,340 veh/h − capacity 2 lanes × 1,550 = 240 veh/h too many, for 50 min = 200 vehicles × 8.4 m ÷ 3 lanes</span></li><li>Extra travel time: <b>+4 to 7 min</b>.<br><span style="color:#5A574F">queue wait 200 ÷ 3,100 veh/h = 3.9 min, + 0.7 min at 60 and 40 km/h through the zone</span></li></ul>'
+        :'<ul><li>Inbound carriageway closed from the Doncaster Rd exit to the Bulleen Rd entry, so a <b>detour is required</b>.</li><li>Detour: Doncaster Rd west → Bulleen Rd north → back on at Bulleen Rd. <b>5.4 km vs 3.7 km</b> on the freeway (+1.7 km).</li><li>Extra travel time: <b>+5 to 8 min</b>.<br><span style="color:#5A574F">detour 5.4 km at 30 to 40 km/h average (60 km/h roads with signals) = 8 to 11 min, vs 3.7 km at 80 = 2.7 min</span></li><li>Real example: full closure Bulleen Rd to Tram Rd, 15 to 18 May 2026 (North East Link).</li></ul>'
+         +'<div class="src"><a href="https://www.google.com/maps/dir/-37.7890,145.1024/-37.7809,145.0785/" target="_blank" rel="noopener">Open detour in Google Maps ↗</a></div>')+
+   '<div class="src">Distances measured on OSM. Demand, capacity and speeds are sample inputs until RPM counts replace them. Full working in Obsidian: RPM Hire · How the numbers are calculated.</div>';
+  [cs,cc].forEach(function(c){ c.classList.toggle('open', (c===cs&&S.card==='safety'&&S.L.safety)||(c===cc&&S.card==='community'&&S.L.community)); var x=c.querySelector('.x'); if(x)x.onclick=function(){S.card=null;cards();}; });
+  var ch=document.getElementById('chips'), h='';
+  if(S.L.safety) h+='<button class="chip" data-c="safety"><i style="background:#C8423B"></i>Why a barrier here</button>';
+  if(S.L.community) h+='<button class="chip" data-c="community"><i style="background:#6B4FA0"></i>'+(lane?'Community: +4 to 7 min':'Detour: +1.7 km')+'</button>';
+  ch.innerHTML=h; ch.style.display=(h&&!PLAN)?'flex':'none';
+  Array.prototype.forEach.call(ch.querySelectorAll('.chip'),function(b){b.onclick=function(){S.card=S.card===b.dataset.c?null:b.dataset.c; S.legend=false; syncLegend(); cards();};});
+}
+function syncLegend(){ var L=document.getElementById('legend'); L.innerHTML=legendHTML(); L.classList.toggle('open',S.legend); document.getElementById('legendBtn').textContent=S.legend?'Hide legend ▾':'Legend ▸'; }
+
+/* ---------- view control ---------- */
+function clampK(k){return Math.max(0.06,Math.min(8,k));}
+function fitBox(x0,y0,x1,y1){ var w=W(),h=H(); V.k=clampK(Math.min(w/(x1-x0), h/(y1-y0))*0.86); V.cx=(x0+x1)/2; V.cy=(y0+y1)/2; render(); }
+function fitSite(){ var p0=at(IN,INC,2800), p1=at(IN,INC,3420); fitBox(Math.min(p0.x,p1.x)-120,Math.min(p0.y,p1.y)-80,Math.max(p0.x,p1.x)+120,Math.max(p0.y,p1.y)+80); }
+function fitBend(){ if(W()<900) fitBox(-100,-420,1500,1300); else fitBox(-1100,-250,1700,1500); }
+function fitAll(){ fitBox(-2900,-1300,3100,2100); }
+function zoomAt(f,sx,sy){ var w=W(),h=H(); if(sx==null){sx=w/2;sy=h/2;} var wx=(sx-w/2)/V.k+V.cx, wy=(sy-h/2)/V.k+V.cy; V.k=clampK(V.k*f); V.cx=wx-(sx-w/2)/V.k; V.cy=wy-(sy-h/2)/V.k; render(); }
+document.getElementById('zin').onclick=function(){zoomAt(1.5);}; document.getElementById('zout').onclick=function(){zoomAt(1/1.5);};
+document.getElementById('fSite').onclick=fitSite; document.getElementById('fBend').onclick=fitBend; document.getElementById('fAll').onclick=fitAll;
+mapEl.addEventListener('wheel',function(e){e.preventDefault(); var r=mapEl.getBoundingClientRect(), sc=mapEl.offsetWidth?r.width/mapEl.offsetWidth:1; zoomAt(Math.exp(-e.deltaY*0.0015),(e.clientX-r.left)/sc,(e.clientY-r.top)/sc);},{passive:false});
+var ptrs={}, last=null, pinch=null;
+svg.addEventListener('click',function(e){ var h=e.target.closest&&e.target.closest('[data-hit]'); if(h&&!panMoved) post({rpPickBarrier:1}); });
+var panMoved=false;
+mapEl.addEventListener('pointerdown',function(e){ panMoved=false; if(e.target.closest('.panel,.eq,button,a,.tag[role]'))return; mapEl.setPointerCapture(e.pointerId); ptrs[e.pointerId]=[e.clientX,e.clientY]; mapEl.classList.add('drag'); last=[e.clientX,e.clientY];
+  var ids=Object.keys(ptrs); if(ids.length===2){var a=ptrs[ids[0]],b=ptrs[ids[1]]; pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),k:V.k};}});
+mapEl.addEventListener('pointermove',function(e){ if(!ptrs[e.pointerId])return; var r=mapEl.getBoundingClientRect(), sc=mapEl.offsetWidth?r.width/mapEl.offsetWidth:1; ptrs[e.pointerId]=[e.clientX,e.clientY]; var ids=Object.keys(ptrs);
+  if(ids.length===2&&pinch){var a=ptrs[ids[0]],b=ptrs[ids[1]], d=Math.hypot(a[0]-b[0],a[1]-b[1]); var mx=((a[0]+b[0])/2-r.left)/sc,my=((a[1]+b[1])/2-r.top)/sc; zoomAt((pinch.k*d/pinch.d)/V.k,mx,my); return;}
+  if(last){ if(Math.abs(e.clientX-last[0])+Math.abs(e.clientY-last[1])>2) panMoved=true; V.cx-=(e.clientX-last[0])/sc/V.k; V.cy-=(e.clientY-last[1])/sc/V.k; last=[e.clientX,e.clientY]; render(); }});
+function up(e){ delete ptrs[e.pointerId]; if(Object.keys(ptrs).length<2)pinch=null; if(!Object.keys(ptrs).length){last=null; mapEl.classList.remove('drag');} else {var id=Object.keys(ptrs)[0]; last=ptrs[id];} }
+mapEl.addEventListener('pointerup',up); mapEl.addEventListener('pointercancel',up);
+document.addEventListener('keydown',function(e){ if(e.target.tagName==='INPUT')return; if(e.key==='+'||e.key==='=')zoomAt(1.5); else if(e.key==='-')zoomAt(1/1.5); else if(e.key==='ArrowLeft'){V.cx-=60/V.k;render();} else if(e.key==='ArrowRight'){V.cx+=60/V.k;render();} else if(e.key==='ArrowUp'){V.cy-=60/V.k;render();} else if(e.key==='ArrowDown'){V.cy+=60/V.k;render();} });
+Array.prototype.forEach.call(document.querySelectorAll('#layers input'),function(i){ i.checked=!!S.L[i.dataset.l]; i.onchange=function(){S.L[i.dataset.l]=i.checked; render(); cards();}; });
+Array.prototype.forEach.call(document.querySelectorAll('#scen button'),function(b){ b.onclick=function(){ S.mode=b.dataset.m; Array.prototype.forEach.call(document.querySelectorAll('#scen button'),function(x){x.classList.toggle('on',x===b);}); render(); cards(); try{parent.postMessage({rpMode:S.mode},'*');}catch(e){} }; b.classList.toggle('on',b.dataset.m===S.mode); });
+document.getElementById('legendBtn').onclick=function(){S.legend=!S.legend; if(S.legend)S.card=null; syncLegend(); cards();};
+var dropEl=document.getElementById('drop');
+document.addEventListener('dragover',function(e){ if(!PLAN)return; e.preventDefault(); dropEl.classList.add('on'); });
+document.addEventListener('dragleave',function(e){ if(!e.relatedTarget) dropEl.classList.remove('on'); });
+document.addEventListener('drop',function(e){ if(!PLAN)return; e.preventDefault(); dropEl.classList.remove('on'); var d=(e.dataTransfer&&e.dataTransfer.getData('text/plain'))||''; var r=mapEl.getBoundingClientRect(), sc=scaleOf(); var w0=toWorld((e.clientX-r.left)/sc,(e.clientY-r.top)/sc), c=project(w0[0],w0[1]);
+  if(d.indexOf('new:')===0) post({rpDrop:{k:d.slice(4),ch:c.ch,off:c.off}}); else if(d.indexOf('move:')===0) post({rpMove:{id:d.slice(5),ch:c.ch,off:c.off}}); });
+window.addEventListener('message',function(e){ var d=e.data||{}; if(d.rpPlan){ P=d.rpPlan; if(!drag) render(); } if('rpSel' in d){ if(S.sel!==d.rpSel){ S.sel=d.rpSel; var q=EQUIP.filter(function(x){return x.k===d.rpSel;})[0]; if(q){var a=at(IN,INC,q.ch); if(V.k<0.5)V.k=0.9; V.cx=a.x; V.cy=a.y;} render(); } } });
+window.addEventListener('resize',render); if(window.ResizeObserver) new ResizeObserver(function(){render();}).observe(mapEl);
+syncLegend(); cards(); post({rpReady:1});
+var start=Q.get('view')||'bend'; if(start==='site')fitSite(); else if(start==='all')fitAll(); else fitBend();
+})();
+</script>
+</body>
+</html>

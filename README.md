@@ -10,6 +10,7 @@ Lay out a work zone on a map, check it against what RPM's sensors measured at si
 |---|---|
 | `Main-v5.dc.html` · Sites | Filter and search sites, List / Map, cost and client score by status |
 | `Plan-v5.dc.html` · Plan | Drag equipment onto the map, barrier evidence check, cost, safety score |
+| `Map-bend.html` · Map | Real Eastern Fwy geometry at the Bulleen Bend (OSM), zoomable; shared by Plan and Live |
 | `Live-v5.dc.html` · Live | Layered map (traffic, safety, community, equipment), zoom, events + assets search, Action → job |
 | `Snapshot-v5.dc.html` · Snapshot | Metrics, chart, lessons learned automatically, team notes |
 | `Place-v5.dc.html`, `Job-v5.dc.html` | Mobile views for the crew |
@@ -66,3 +67,21 @@ TypeScript + React (Next.js) · MySQL 8 (RPM's database) with spatial functions 
 
 ## Credits
 React 18 (MIT licence, `vendor/LICENSE-react.txt`). Fonts: IBM Plex via Google Fonts. Map drawing is illustrative; no third-party map data is used.
+
+
+---
+
+## Versions
+
+This folder is a git repo. Each prototype version is a tagged commit.
+
+| Tag | Date | What |
+|---|---|---|
+| `v5.1` | 30 Sep 2026, 14:40 | Renamed RP · Revolutionary Planning, working Sites filters and + New site, published as an app |
+| `v6.1` | 30 Sep 2026, 15:20 | Real Bulleen Bend map shared by Plan and Live, closure switch (detour only on full closure), queue and travel time calculated, CCTV live view, barrier swap fix |
+
+```bash
+git log --oneline --decorate     # see versions
+git diff v5.1 v6.1 --stat        # what changed
+git checkout v5.1                # look at an old version (git checkout main to come back)
+```
