@@ -303,6 +303,7 @@ function render(){
   o.push('</g>');
   svg.innerHTML=o.join('');
   renderOverlay();
+  if(!PLAN){ var lp=document.getElementById('layers'), sp=document.getElementById('scen'); sp.style.top=(lp.offsetTop+lp.offsetHeight+8)+'px'; }
   document.getElementById('pct').textContent=Math.round(V.k/0.6*100)+'%';
   // scale bar
   var cand=[20,50,100,200,500,1000,2000], m=cand[0]; for(var j=0;j<cand.length;j++){ if(cand[j]*V.k<=120) m=cand[j]; }
@@ -381,8 +382,10 @@ function renderOverlay(){
     var KI={vms:'vms',vsl:'sign',cushion:'cc',cctv:'cam',radar:'radar',arrow:'arrow',water:'bar',steel:'bar',concrete:'bar',lights:'light',tower:'light',boom:'boom',hvm:'bar',plates:'plate'};
     P.items.forEach(function(it){ if(it.path) return; var p=sAt(it.ch,it.off); if(drag&&drag.id===it.id&&drag.moved) p=[drag.x,drag.y]; if(!vis(p)&&!(drag&&drag.id===it.id))return;
       var on = P.selId ? P.selId===it.id : P.selK===it.k;
-      var b=el('button','eq grab'+(it.k==='cushion'?' crit':'')+(on?' sel':''),'<span class="ic">'+(ICON[KI[it.k]]||ICON.bar)+'</span>'+(k>=0.25||on?'<span class="nm">'+(it.lbl||it.k)+'</span>':''),p[0],p[1]);
+      var locked = P.readOnly || (P.lockedKinds||[]).indexOf(it.k)>=0;
+      var b=el('button','eq'+(locked?'':' grab')+(it.k==='cushion'?' crit':'')+(on?' sel':''),'<span class="ic">'+(ICON[KI[it.k]]||ICON.bar)+'</span>'+(k>=0.25||on?'<span class="nm">'+(locked&&!P.readOnly?'🔒 ':'')+(it.lbl||it.k)+'</span>':''),p[0],p[1]);
       b.type='button'; b.setAttribute('aria-label','Select '+(it.lbl||it.k)+', drag to move');
+      if(locked){ b.addEventListener('pointerdown',function(e){e.stopPropagation();}); b.addEventListener('click',function(e){ e.stopPropagation(); post({rpPickItem:{id:it.id,k:it.k}}); if(!P.readOnly) toast('Locked by RPM (safety-critical). Request an amendment to change it.'); }); return; }
       b.addEventListener('pointerdown',function(e){ e.stopPropagation(); e.preventDefault(); b.setPointerCapture(e.pointerId); drag={id:it.id,x0:e.clientX,y0:e.clientY,moved:false,x:p[0],y:p[1],sx:p[0],sy:p[1]}; });
       b.addEventListener('pointermove',function(e){ if(!drag||drag.id!==it.id)return; var sc=scaleOf(); var dx=(e.clientX-drag.x0)/sc, dy=(e.clientY-drag.y0)/sc; if(Math.hypot(dx,dy)>4) drag.moved=true; drag.x=drag.sx+dx; drag.y=drag.sy+dy; if(drag.moved){ b.style.left=drag.x+'px'; b.style.top=drag.y+'px'; } });
       b.addEventListener('pointerup',function(e){ if(!drag||drag.id!==it.id)return; var d=drag; drag=null; if(d.moved){ var w0=toWorld(d.x,d.y), c=project(w0[0],w0[1]); it.ch=c.ch; it.off=c.off; post({rpMove:{id:it.id,ch:c.ch,off:c.off}}); render(); } else post({rpPickItem:{id:it.id,k:it.k}}); });
@@ -403,6 +406,7 @@ function renderOverlay(){
     });
   }
 }
+function toast(msg){ var t=document.getElementById('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; t.setAttribute('role','status'); t.style.cssText='position:absolute;left:50%;top:64px;transform:translateX(-50%);background:#1D1D1B;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;z-index:5;box-shadow:0 6px 16px rgba(0,0,0,.25);max-width:90%;text-align:center'; mapEl.appendChild(t);} t.textContent=msg; t.hidden=false; clearTimeout(t._h); t._h=setTimeout(function(){t.hidden=true;},2600); }
 function post(m){ try{ parent.postMessage(m,'*'); }catch(e){} }
 function scaleOf(){ var r=mapEl.getBoundingClientRect(); return mapEl.offsetWidth?r.width/mapEl.offsetWidth:1; }
 function toWorld(sx,sy){ return [(sx-W()/2)/V.k+V.cx,(sy-H()/2)/V.k+V.cy]; }
@@ -483,6 +487,7 @@ var dropEl=document.getElementById('drop');
 document.addEventListener('dragover',function(e){ if(!PLAN)return; e.preventDefault(); dropEl.classList.add('on'); });
 document.addEventListener('dragleave',function(e){ if(!e.relatedTarget) dropEl.classList.remove('on'); });
 document.addEventListener('drop',function(e){ if(!PLAN)return; e.preventDefault(); dropEl.classList.remove('on'); var d=(e.dataTransfer&&e.dataTransfer.getData('text/plain'))||''; var r=mapEl.getBoundingClientRect(), sc=scaleOf(); var w0=toWorld((e.clientX-r.left)/sc,(e.clientY-r.top)/sc), c=project(w0[0],w0[1]);
+  if(P.readOnly||P.noAdd){ toast(P.readOnly?'This plan is confirmed. Request an amendment to change it.':'Adding equipment needs an amendment request.'); post({rpDenied:1}); return; }
   if(d.indexOf('new:')===0) post({rpDrop:{k:d.slice(4),ch:c.ch,off:c.off}}); else if(d.indexOf('move:')===0) post({rpMove:{id:d.slice(5),ch:c.ch,off:c.off}}); });
 window.addEventListener('message',function(e){ var d=e.data||{}; if(d.rpPlan){ P=d.rpPlan; if(!drag) render(); } if('rpSel' in d){ if(S.sel!==d.rpSel){ S.sel=d.rpSel; var q=EQUIP.filter(function(x){return x.k===d.rpSel;})[0]; if(q){var a=at(IN,INC,q.ch); if(V.k<0.5)V.k=0.9; V.cx=a.x; V.cy=a.y;} render(); } } });
 window.addEventListener('resize',render); if(window.ResizeObserver) new ResizeObserver(function(){render();}).observe(mapEl);

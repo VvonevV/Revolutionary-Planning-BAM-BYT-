@@ -41,6 +41,14 @@ h1{font-size:clamp(26px,4vw,38px);line-height:1.15;margin:6px 0 10px;text-wrap:b
 .card b{font-size:15px}.card span{font-size:13px;color:var(--muted)}
 .note{padding:14px 16px;border:1px dashed var(--line);border-radius:8px;font-size:13px;color:var(--muted)}
 code{font-family:var(--mono);font-size:12px}
+.vtabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.vtabs button{height:44px;padding:0 16px;border:none;background:none;border-bottom:3px solid transparent;font:inherit;font-size:15px;color:var(--muted);cursor:pointer}
+.vtabs button[aria-selected="true"]{border-bottom-color:var(--amber);color:var(--ink);font-weight:600}
+.vtabs button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.panel{display:flex;flex-direction:column;gap:16px}
+.reqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.req{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.req b{font-size:14px}.req ul{margin:0;padding-left:18px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 </style>
 
 <header class="bar"><div><i class="logo"></i><b>RP</b><span>Revolutionary Planning</span><em>RPM Hire · FEIT Hackathon 2026</em></div></header>
@@ -50,9 +58,14 @@ code{font-family:var(--mono);font-size:12px}
     <h1>Road works have no memory. RP gives every site one.</h1>
     <p class="lead">Plan a work zone on a map, check it against what RPM's sensors measured at similar sites, and see the cost and a safety score before anything is deployed. Every finished job leaves a snapshot that improves the next plan.</p>
   </section>
+  <div class="vtabs" role="tablist" aria-label="Choose a view">
+    <button role="tab" id="tab-rpm" aria-controls="panel-rpm" aria-selected="true" type="button">RPM team</button>
+    <button role="tab" id="tab-client" aria-controls="panel-client" aria-selected="false" type="button">Client</button>
+  </div>
+  <section class="panel" id="panel-rpm" role="tabpanel" aria-labelledby="tab-rpm">
   <div class="actions">
     <a class="cta" href="Main-v5.dc.html">Open RP →</a>
-    <span class="hint">Starts on Sites. Try the filters, then + New site.</span>
+    <span class="hint">Starts on Sites. Try the filters, then + New site. Client portal is in the next tab.</span>
   </div>
   <div class="grid">
     <a class="card" href="Main-v5.dc.html"><img src="docs/Main-v5.png" alt="Sites screen"><div><small>Before · overview</small><b>Sites</b><span>Filters and search that drive the list, map and KPI tiles. + New site finds similar past jobs.</span></div></a>
@@ -63,7 +76,34 @@ code{font-family:var(--mono);font-size:12px}
     <a class="card m" href="Place-v5.dc.html"><img src="docs/Place-v5.png" alt="Place, mobile screen"><div><small>Crew · mobile</small><b>Place equipment</b><span>Crew places each item where the plan says.</span></div></a>
     <a class="card m" href="Job-v5.dc.html"><img src="docs/Job-v5.png" alt="My jobs, mobile screen"><div><small>Crew · mobile</small><b>My jobs</b><span>Jobs sent from Live, with location, reason and checklist.</span></div></a>
   </div>
-  <p class="note">Prototype on sample data shaped like RPM Hire's MySQL schema. Rates, the safety score and event severity are placeholders until agreed with RPM. Sites you create stay for this browser tab only.</p>
+    </section>
+  <section class="panel" id="panel-client" role="tabpanel" aria-labelledby="tab-client" hidden>
+    <div class="actions">
+      <a class="cta" href="Client.html">Open the client portal →</a>
+      <span class="hint">Signed in as a sample client. Sees only its own projects.</span>
+    </div>
+    <div class="grid">
+      <a class="card" href="Client.html#CZ-0016"><img src="docs/Client-plan.png" alt="Client plan review"><div><small>Before · review</small><b>Plan review</b><span>Safety score, cost and the plan map. Move signs and cameras; barrier and cushion are locked. Confirm, or request an amendment.</span></div></a>
+      <a class="card" href="Client.html#CZ-0012"><img src="docs/Client-live.png" alt="Client live view"><div><small>During</small><b>Live</b><span>Same view as RPM. Actions: report an event or request assets. Tap an asset to report a defect.</span></div></a>
+      <a class="card" href="Client.html#CZ-0012"><img src="docs/Client-snapshot.png" alt="Client snapshot"><div><small>After</small><b>Snapshot</b><span>Approved and logged events, plus team notes.</span></div></a>
+    </div>
+    <div class="reqs">
+      <div class="req"><b>How approvals work</b><ul><li>An event that needs RPM action shows <b>Sent for approval</b>, then <b>Approved</b> once the RPM manager reviews it in RPM › Live.</li><li>An event with no RPM action goes straight into the snapshot.</li></ul></div>
+      <div class="req"><b>What a client can change</b><ul><li>Draft plan: move non-critical equipment (signs, VMS, CCTV, radar).</li><li>Barrier and crash cushion: locked by RPM.</li><li>Confirmed plan: amendment requests only.</li></ul></div>
+    </div>
+  </section>
+<p class="note">Prototype on sample data shaped like RPM Hire's MySQL schema. Rates, the safety score and event severity are placeholders until agreed with RPM. Sites you create stay for this browser tab only.</p>
 </main>
+<script>
+(function(){
+  var tabs=[document.getElementById('tab-rpm'),document.getElementById('tab-client')];
+  function show(which){ tabs.forEach(function(t){ var on=t.id==='tab-'+which; t.setAttribute('aria-selected',on); document.getElementById(t.getAttribute('aria-controls')).hidden=!on; });
+    try{ localStorage.setItem('rp.view',which); }catch(e){} }
+  tabs.forEach(function(t,i){ t.addEventListener('click',function(){ show(i?'client':'rpm'); });
+    t.addEventListener('keydown',function(e){ if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ var n=tabs[(i+1)%2]; n.focus(); n.click(); } }); });
+  var start=location.hash==='#client'?'client':null; if(!start){ try{ start=localStorage.getItem('rp.view'); }catch(e){} }
+  show(start==='client'?'client':'rpm');
+})();
+</script>
 
 </body></html>

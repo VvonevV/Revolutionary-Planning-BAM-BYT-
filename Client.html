@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RP Client Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: client portal. Ink bar with RPM | Client switch, project rail on the left, one project workspace with Plan · Live · Snapshot. Same site-kit look as the RPM screens. */
+:root{
+  --ground:#F4F2EC; --surface:#FFFFFF; --sunk:#FAF9F6; --ink:#1D1D1B; --muted:#5A574F; --line:#D8D3C7; --line2:#EEEAE1;
+  --amber:#E0A100; --amberbg:#FBF3DC; --amberfg:#6B5200;
+  --ok:#2F6B3A; --okbg:#E4F0E6; --warn:#9A6400; --warnbg:#FBF3DC; --bad:#8E2F20; --badbg:#FBEDEA; --info:#1D4F8A; --infobg:#E3ECF7; --purple:#6B4FA0;
+  --bar:#1D1D1B; --barink:#F4F2EC; --barmuted:#B9B4A8;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#171714; --surface:#22211E; --sunk:#1C1B18; --ink:#EDEAE2; --muted:#ABA698; --line:#3A3833; --line2:#2E2C28;
+  --amber:#E8AE1C; --amberbg:#3A3012; --amberfg:#F2D27A;
+  --ok:#8FD19C; --okbg:#1E3324; --warn:#F2C46B; --warnbg:#3A3012; --bad:#F2A394; --badbg:#3B1F1A; --info:#9CC2F0; --infobg:#1B2A3D; --purple:#C2B0EA;
+  --bar:#0E0E0C; --barink:#F4F2EC; --barmuted:#9E998C; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --ground:#171714; --surface:#22211E; --sunk:#1C1B18; --ink:#EDEAE2; --muted:#ABA698; --line:#3A3833; --line2:#2E2C28;
+  --amber:#E8AE1C; --amberbg:#3A3012; --amberfg:#F2D27A;
+  --ok:#8FD19C; --okbg:#1E3324; --warn:#F2C46B; --warnbg:#3A3012; --bad:#F2A394; --badbg:#3B1F1A; --info:#9CC2F0; --infobg:#1B2A3D; --purple:#C2B0EA;
+  --bar:#0E0E0C; --barink:#F4F2EC; --barmuted:#9E998C; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);background:var(--ground);color:var(--ink);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.app{min-height:100%;display:flex;flex-direction:column}
+.bar{background:var(--bar);color:var(--barink);padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:16px;color:var(--barink);text-decoration:none}
+.logo i{width:14px;height:14px;border-radius:3px;background:var(--amber);display:inline-block}
+.logo span{font-weight:400;font-size:12px;color:var(--barmuted)}
+.switch{display:flex;background:#3A3935;border-radius:8px;padding:3px;gap:2px}
+.switch a{padding:5px 12px;border-radius:6px;color:#D8D3C7;text-decoration:none;font-size:13px}
+.switch a.on{background:#F4F2EC;color:#1D1D1B;font-weight:600}
+.who{margin-left:auto;font-size:12px;color:var(--barmuted);text-align:right}
+.who b{color:var(--barink);font-weight:500}
+.body{flex:1;display:grid;grid-template-columns:280px minmax(0,1fr);min-height:0}
+.rail{border-right:1px solid var(--line);background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.proj{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer}
+.proj:hover{border-color:var(--ink)}
+.proj.on{border-color:var(--ink);box-shadow:inset 3px 0 0 var(--amber)}
+.proj .id{font-family:var(--mono);font-size:12px;font-weight:600}
+.proj .nm{font-weight:600;font-size:13px}
+.hint{font-size:12px;color:var(--muted)}
+.btn{height:38px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:hover{border-color:var(--ink)}
+.btn.pri{background:var(--amber);border-color:var(--amber);color:#1D1D1B}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.p-plan{background:var(--amberbg);color:var(--amberfg)} .p-live{background:var(--infobg);color:var(--info)} .p-ok{background:var(--okbg);color:var(--ok)} .p-bad{background:var(--badbg);color:var(--bad)} .p-sub{background:var(--line2);color:var(--muted)}
+main{min-width:0;display:flex;flex-direction:column}
+.head{background:var(--surface);border-bottom:1px solid var(--line);padding:12px 20px 0;display:flex;flex-direction:column;gap:8px}
+.crumb{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.crumb .id{font-family:var(--mono);font-weight:600}
+.crumb h1{font-size:17px;margin:0;font-weight:600;text-wrap:balance}
+.chips{display:flex;gap:6px;flex-wrap:wrap;font-size:12px}
+.chips span{padding:2px 8px;border:1px solid var(--line);border-radius:10px}
+.tabs{display:flex;gap:4px;margin-top:4px}
+.tabs button{height:40px;padding:0 14px;border:none;background:none;border-bottom:3px solid transparent;cursor:pointer;color:var(--muted);font-size:14px}
+.tabs button.on{border-bottom-color:var(--amber);color:var(--ink);font-weight:600}
+.tabs button[disabled]{opacity:.4;cursor:not-allowed}
+.work{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
+.mapbox{position:relative;min-height:520px;background:#F3F2EE;border-right:1px solid var(--line)}
+.mapbox iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.side{background:var(--surface);padding:16px;display:flex;flex-direction:column;gap:14px;overflow:auto;max-height:calc(100vh - 150px)}
+.side>*{flex-shrink:0}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.card h3{margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+.score{display:flex;align-items:baseline;gap:6px}
+.score b{font-size:34px;font-variant-numeric:tabular-nums;line-height:1}
+.meter{height:8px;border-radius:4px;background:linear-gradient(90deg,#E6B7AE 0 50%,#EFD9A3 50% 75%,#BFDDC5 75% 90%,#93C9A0 90%);position:relative}
+.meter i{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink)}
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--line2);font-size:13px;align-items:center}
+.row .q,.row .c{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.row .c{text-align:right;min-width:70px}
+.lock{font-size:11px;color:var(--muted)}
+.total{display:flex;justify-content:space-between;align-items:baseline}
+.total b{font-size:24px;font-variant-numeric:tabular-nums}
+.note{padding:10px 12px;border:1px dashed var(--line);border-radius:8px;font-size:12px;color:var(--muted)}
+.ev{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid var(--line2)}
+.ev .t{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.ev .a{font-weight:600;font-size:13px}
+.ev .b{font-size:12px;color:var(--muted)}
+.ev .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.tile small{font-size:11px;color:var(--muted);display:block}
+.tile b{font-family:var(--mono);font-size:18px}
+.tile span{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.menu{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.menu button{border:none;border-bottom:1px solid var(--line2);background:var(--surface);text-align:left;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.menu button:last-child{border-bottom:none}
+.menu button:hover{background:var(--sunk)}
+.menu small{color:var(--muted);font-size:12px}
+form{display:flex;flex-direction:column;gap:12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label,.f .lab{font-size:12px;font-weight:600}
+.f input,.f select,.f textarea{height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.f textarea{height:auto;min-height:72px;padding:8px 10px;resize:vertical}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:12px;font-weight:500;cursor:pointer}
+.seg input{margin:0;accent-color:var(--ink)}
+.sev{display:flex;align-items:center;gap:10px}
+.sev input{flex:1;accent-color:var(--ink)}
+.sev b{font-family:var(--mono);min-width:48px}
+.err{color:var(--bad);font-size:12px}
+.page{padding:20px;max-width:900px;width:100%;display:flex;flex-direction:column;gap:16px}
+.page h2{margin:0;font-size:20px}
+.assetgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.step{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px}
+.step div{display:flex;align-items:center;gap:4px}
+.step button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.step b{font-family:var(--mono);min-width:18px;text-align:center}
+.snap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;padding:20px;align-items:start}
+.timeline{display:flex;flex-direction:column}
+.confirm{border:2px solid var(--ink);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--sunk)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.25);z-index:20;max-width:calc(100% - 32px)}
+.demo{font-size:11px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+@media (max-width:1100px){.work{grid-template-columns:minmax(0,1fr)}.mapbox{min-height:460px;border-right:none;border-bottom:1px solid var(--line)}.side{max-height:none}.snap{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.body{grid-template-columns:minmax(0,1fr)}.rail{border-right:none;border-bottom:1px solid var(--line)}.grid2{grid-template-columns:minmax(0,1fr)}.who{margin-left:0;text-align:left;width:100%}.head,.page,.snap{padding-left:16px;padding-right:16px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <a class="logo" href="index.html"><i></i>RP<span>Revolutionary Planning</span></a>
+    <nav class="switch" aria-label="Switch view"><a href="Main-v5.dc.html">RPM team</a><a class="on" href="Client.html" aria-current="page">Client</a></nav>
+    <div class="who">Signed in as <b>Alex Morgan</b> · Sample Contractor Pty Ltd (client)<br>Sample account for the demo</div>
+  </header>
+  <div class="body">
+    <aside class="rail" aria-label="Your projects">
+      <div class="eyebrow">Your projects</div>
+      <div id="projList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="hint" id="hiddenNote"></div>
+      <button class="btn pri" id="newReq" type="button">+ New project request</button>
+    </aside>
+    <main id="main"></main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+(function(){
+'use strict';
+/* ---------- rates and scoring: same rules as the RPM Plan screen ---------- */
+var RATES={water:['Water-filled barrier · 220 m',4400],steel:['Steel barrier · 220 m',7920],concrete:['Concrete barrier · 220 m',6200],cushion:['Crash cushion',1200],vms:['VMS board',650],vsl:['Speed limit sign',450],arrow:['Arrow board',400],lights:['Portable lights',380],cctv:['CCTV trailer',900],radar:['Radar',300],tower:['Light tower',420],boom:['Portaboom',350],hvm:['HVM barrier',1500],plates:['Road plates',200]};
+var SHORT={water:'WF',steel:'STEEL',concrete:'CONC',cushion:'CC',vms:'VMS',vsl:'SIGN',arrow:'ARROW',lights:'LIGHT',cctv:'CAM',radar:'R',tower:'TOWER',boom:'BOOM',hvm:'HVM',plates:'PLATE'};
+var BARS=['water','steel','concrete'];
+var LOCKED=['water','steel','concrete','cushion','hvm']; // safety-critical: RPM decides
+var CLIENT_ORG='Sample Contractor Pty Ltd';
+var ALL_RPM_PROJECTS=15;
+function fmt(n){return '$'+n.toLocaleString('en-AU');}
+function cost(items,weeks){var t=2500;items.forEach(function(i){t+=RATES[i.k][1]*weeks;});return t;}
+function score(items){var q={};items.forEach(function(i){q[i.k]=(q[i.k]||0)+1;});var bk=q.water?'water':q.steel?'steel':q.concrete?'concrete':null;
+  var s=bk==='water'?58:bk?81:30; var v=q.vms||0,sl=q.vsl||0; s+=v===0?-10:Math.min(2,v-1)*3; s-=sl<2?6*(2-sl):0; s-=q.cushion?0:12; s+=q.lights?2:0; s=Math.max(0,Math.min(100,s));
+  var band=s>=90?['Strong','p-ok']:s>=75?['Good','p-ok']:s>=50?['Moderate','p-plan']:['Needs work','p-bad']; return {s:s,band:band,bk:bk,ok:!!bk&&bk!=='water'};}
+
+/* ---------- sample data (the client's own projects only) ---------- */
+function seed(){ return {
+  seq:18, projects:[
+  {id:'CZ-0012', name:'Eastern Fwy inbound · Bulleen Bend', stage:'live', org:CLIENT_ORG, weeks:3, confirmed:'22 Sep, 10:14',
+   profile:{location:'Eastern Fwy inbound, Bulleen Rd to Doncaster Rd',road:'Freeway',normal:100,posted:40,lanes:'1 of 3',shift:'Night',duration:'3 weeks'},
+   items:[{id:'b1',k:'steel',path:true},{id:'c1',k:'cushion',ch:2952,off:3.5},{id:'v1',k:'vms',ch:1300,off:-10},{id:'s1',k:'vsl',ch:2050,off:-10},{id:'s2',k:'vsl',ch:2600,off:-10},{id:'t1',k:'cctv',ch:3230,off:-12},{id:'r1',k:'radar',ch:2450,off:-10}],
+   amendments:[{t:'21 Sep',what:'Swap water-filled barrier to steel',why:'Evidence check: traffic faster than the 40 km/h rating',status:'Approved by RPM'}],
+   events:[
+    {id:'e1',t:'21:15',type:'Crash cushion impact',a:'Crash cushion CC-1 impact detected',desc:'Impact tracker. Non-compliant until replaced.',sev:9,workers:'Near miss',equip:['CC-1'],by:'RPM',needs:true,status:'approved'},
+    {id:'e2',t:'20:40',type:'Queue / traffic',a:'Queue longer than usual at the taper',desc:'Traffic controller noted ~700 m queue at shift start.',sev:3,workers:'None',equip:[],by:'Client',needs:false,status:'logged'}
+   ],
+   notes:[{t:'29 Sep 06:10',who:'RPM Ops',text:'CC-1 replaced 04:40. Steel barrier B-4 checked, within tolerance.'},{t:'29 Sep 07:30',who:'Alex Morgan (client)',text:'Crew asks for an extra light tower near the taper for night 10.'}]},
+  {id:'CZ-0016', name:'Eastern Fwy inbound · Bulleen Bend, stage 2', stage:'plan', org:CLIENT_ORG, weeks:2, drafted:'30 Sep, 11:20 by RPM sales',
+   profile:{location:'Eastern Fwy inbound, Bulleen Rd to Doncaster Rd',road:'Freeway',normal:100,posted:40,lanes:'1 of 3',shift:'Night',duration:'2 weeks'},
+   items:[{id:'b1',k:'water',path:true},{id:'c1',k:'cushion',ch:2952,off:3.5},{id:'v1',k:'vms',ch:1300,off:-10},{id:'s1',k:'vsl',ch:2050,off:-10},{id:'s2',k:'vsl',ch:2600,off:-10},{id:'t1',k:'cctv',ch:3230,off:-12},{id:'r1',k:'radar',ch:2450,off:-10}],
+   amendments:[], events:[], notes:[]}
+  ]};}
+var KEY='rp.client.v1', DB;
+function load(){ try{ var v=localStorage.getItem(KEY); if(v){ DB=JSON.parse(v); return; } }catch(e){} DB=seed(); }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){} }
+load();
+var UI={pid:null, tab:'plan', view:'project', sel:null, side:null, mode:'lane'};
+function P(){ return DB.projects.filter(function(p){return p.id===UI.pid;})[0]; }
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function toast(m){var t=document.getElementById('toast'); t.textContent=m; t.hidden=false; clearTimeout(t._h); t._h=setTimeout(function(){t.hidden=true;},3200);}
+var STAGE={request:['Submitted · waiting for RPM sales','p-sub'],plan:['Plan ready for your review','p-plan'],confirmed:['Plan confirmed','p-ok'],live:['Live','p-live'],done:['Finished','p-sub']};
+
+/* ---------- project rail ---------- */
+function renderRail(){
+  var el=document.getElementById('projList');
+  el.innerHTML=DB.projects.map(function(p){ var st=STAGE[p.stage];
+    return '<button type="button" class="proj'+(p.id===UI.pid&&UI.view==='project'?' on':'')+'" data-p="'+p.id+'"><span style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="id">'+p.id+'</span><span class="pill '+st[1]+'">'+st[0]+'</span></span><span class="nm">'+esc(p.name)+'</span><span class="hint">'+esc(p.profile.shift)+' · '+esc(p.profile.duration)+' · lane closure '+esc(p.profile.lanes)+'</span></button>'; }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('.proj'),function(b){ b.onclick=function(){ openProject(b.dataset.p); }; });
+  document.getElementById('hiddenNote').textContent='Showing the '+DB.projects.length+' projects linked to '+CLIENT_ORG+'. Other RPM projects ('+(ALL_RPM_PROJECTS-2)+') are not visible to your account.';
+}
+function openProject(id){ UI.pid=id; UI.view='project'; UI.sel=null; UI.side=null; var p=P(); UI.tab = p.stage==='live'?'live':'plan'; render(); }
+document.getElementById('newReq').onclick=function(){ UI.view='request'; UI.pid=null; render(); };
+
+/* ---------- main ---------- */
+function render(){ renderRail(); var m=document.getElementById('main');
+  if(UI.view==='request'){ UI.shell=null; return renderRequest(m); }
+  var p=P(); if(!p){ UI.pid=DB.projects[0].id; p=P(); UI.tab=p.stage==='live'?'live':'plan'; }
+  var st=STAGE[p.stage]; var canLive=p.stage==='live'||p.stage==='done', canSnap=canLive, canPlan=p.stage!=='request';
+  var head='<div class="head"><div class="crumb"><span class="id">'+p.id+'</span><h1>'+esc(p.name)+'</h1><span class="pill '+st[1]+'">'+st[0]+'</span></div>'+
+   '<div class="chips"><span>'+esc(p.profile.shift)+' works</span><span>'+esc(p.profile.road)+' · normal '+p.profile.normal+' km/h</span><span>Posted '+p.profile.posted+'</span><span>Lane closure · '+esc(p.profile.lanes)+'</span><span>'+esc(p.profile.duration)+'</span></div>'+
+   '<nav class="tabs" role="tablist">'+tab('plan','Plan',canPlan)+tab('live','Live',canLive)+tab('snapshot','Snapshot',canSnap)+'</nav></div>';
+  if(p.stage==='request'){ UI.shell=null; m.innerHTML=head+'<div class="page"><div class="card"><h3>Request sent to RPM sales</h3><p style="margin:0">RPM sales will draft a site plan from your requirements. You will see it here to review, adjust and confirm.</p>'+profileList(p)+'</div></div>'; bindTabs(); return; }
+  var html = UI.tab==='plan' ? head+planView(p) : UI.tab==='live' ? head+liveView(p) : head+snapView(p);
+  var shell = p.id+'|'+UI.tab+'|'+(p.stage==='plan'?'e':'r');
+  if(shell===UI.shell && m.querySelector('.side') && UI.tab!=='snapshot'){
+    var tmp=document.createElement('div'); tmp.innerHTML=html;
+    m.querySelector('.head').innerHTML=tmp.querySelector('.head').innerHTML;
+    m.querySelector('.side').innerHTML=tmp.querySelector('.side').innerHTML;
+  } else { m.innerHTML=html; UI.shell=shell; }
+  bindTabs(); bindView(p);
+}
+function tab(k,l,en){return '<button type="button" role="tab" data-tab="'+k+'" class="'+(UI.tab===k?'on':'')+'" aria-selected="'+(UI.tab===k)+'"'+(en?'':' disabled title="Available once the site is live"')+'>'+l+'</button>';}
+function bindTabs(){ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){ b.onclick=function(){ UI.tab=b.dataset.tab; UI.sel=null; UI.side=null; render(); }; }); }
+function profileList(p){ var r=p.profile; return '<div class="rows">'+[['Location',r.location],['Road type',r.road],['Normal speed',r.normal+' km/h'],['Posted speed',r.posted+' km/h'],['Lanes closed',r.lanes],['Shift',r.shift],['Duration',r.duration]].map(function(x){return '<div class="row" style="grid-template-columns:140px minmax(0,1fr)"><span class="hint">'+x[0]+'</span><span>'+esc(x[1])+'</span></div>';}).join('')+'</div>'; }
+
+/* ---------- PLAN ---------- */
+function editable(p){ return p.stage==='plan'; }
+function planView(p){
+  var sc=score(p.items), weeks=p.weeks, ed=editable(p);
+  var q={}; p.items.forEach(function(i){q[i.k]=(q[i.k]||0)+1;});
+  var rows=Object.keys(q).map(function(k){ var lk=LOCKED.indexOf(k)>=0; return '<div class="row"><span>'+RATES[k][0]+(lk?' <span class="lock">🔒 RPM</span>':'')+'<br><span class="hint">'+fmt(RATES[k][1])+'/wk</span></span><span class="q">×'+q[k]+'</span><span class="c">'+fmt(RATES[k][1]*q[k]*weeks)+'</span></div>'; }).join('');
+  var status = ed ? '<div class="note"><b style="color:var(--ink)">You can adjust:</b> drag signs, VMS, CCTV and radar along the road. <b style="color:var(--ink)">Locked by RPM:</b> barrier and crash cushion (safety-critical). To add, remove or swap equipment, request an amendment.</div>'
+     : '<div class="note">This plan is confirmed'+(p.confirmed?' ('+esc(p.confirmed)+')':'')+'. You can view it and request amendments.</div>';
+  var confirmBox = UI.side==='confirm' ? '<div class="confirm" id="confirmBox"><b>Confirm this plan for RPM?</b><span class="hint">RPM will book the equipment at '+fmt(cost(p.items,weeks))+' (estimate) for '+esc(p.profile.duration)+'. After this, changes go through amendment requests.</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn dark" id="doConfirm" type="button">Yes, confirm plan</button><button class="btn" id="cancelConfirm" type="button">Cancel</button></div></div>' : '';
+  var amendForm = UI.side==='amend' ? amendHTML(p) : '';
+  var sel = UI.sel ? selHTML(p) : '';
+  var am = p.amendments.length ? '<div class="card"><h3>Amendment requests</h3><div class="rows">'+p.amendments.map(function(a){ return '<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><span><b style="font-weight:600">'+esc(a.what)+'</b><br><span class="hint">'+esc(a.t)+' · '+esc(a.why)+'</span></span><span class="pill '+(a.status.indexOf('Approved')===0?'p-ok':'p-plan')+'">'+esc(a.status)+'</span></div>'; }).join('')+'</div></div>' : '';
+  return '<div class="work"><div class="mapbox"><iframe id="rpmap" src="Map-bend.html?embed=1&screen=plan&view=bend" title="Site plan map, Eastern Freeway at the Bulleen Bend"></iframe></div>'+
+   '<div class="side">'+
+   '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">Plan safety score</span><span class="pill '+sc.band[1]+'">'+sc.band[0]+'</span></div><div class="score"><b>'+sc.s+'</b><span class="hint">/100 · evidence-based, not a certification</span></div><div class="meter"><i style="left:'+sc.s+'%"></i></div><span class="hint">Barrier vs observed speed: <b style="color:'+(sc.ok?'var(--ok)':'var(--bad)')+'">'+(sc.bk?(sc.ok?'covers observed':'below observed'):'no barrier')+'</b></span></div>'+
+   '<div class="card"><h3>Estimated cost <span class="hint" style="font-weight:400">'+weeks+' weeks · sample rates</span></h3><div class="rows">'+rows+'<div class="row"><span>Delivery and set-up</span><span></span><span class="c">$2,500</span></div></div><div class="total"><span class="hint">Not final</span><b>'+fmt(cost(p.items,weeks))+'</b></div></div>'+
+   sel + status + confirmBox + amendForm +
+   '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(ed?'<button class="btn pri" id="askConfirm" type="button">Confirm plan for RPM</button>':'')+'<button class="btn" id="askAmend" type="button">Request amendment</button></div>'+
+   am + '</div></div>';
+}
+function selHTML(p){ var it=p.items.filter(function(i){return i.id===UI.sel;})[0]; if(!it) return '';
+  var lk=LOCKED.indexOf(it.k)>=0, sc=score(p.items);
+  var ev = BARS.indexOf(it.k)>=0 ? '<span class="hint">'+(sc.ok?'Rated above observed speeds.':'Rated for 40 km/h. RPM measured avg 63, max 91 km/h at similar sites nearby, so traffic here is faster.')+'</span>' : '';
+  return '<div class="card"><h3>'+RATES[it.k][0]+(lk?' <span class="pill p-sub">🔒 Locked by RPM</span>':' <span class="pill p-ok">You can move this</span>')+'</h3>'+ev+
+   (lk&&editable(p)?'<button class="btn" type="button" id="amendThis">Request a change to this</button>':'')+'</div>'; }
+function amendHTML(p){ var pre=UI.amendPre||'';
+  return '<form class="card" id="amendForm" novalidate><h3>Request an amendment</h3><div class="f"><label for="am-what">What should change?</label><input id="am-what" required value="'+esc(pre)+'" placeholder="e.g. Swap water-filled barrier to steel"></div>'+
+   '<div class="f"><label for="am-why">Why</label><textarea id="am-why" placeholder="e.g. The evidence check shows traffic faster than the barrier rating"></textarea></div>'+
+   '<div class="f"><label for="am-when">Needed from</label><input id="am-when" type="date"></div><span class="err" id="am-err" hidden>Say what should change.</span>'+
+   '<div style="display:flex;gap:8px"><button class="btn dark" type="submit">Send to RPM</button><button class="btn" type="button" id="am-cancel">Cancel</button></div></form>'; }
+
+/* ---------- LIVE ---------- */
+var LIVE_ASSETS=[['cc1','CC-1','Crash cushion'],['r12','R-12','Radar'],['vms1','VMS 1','VMS board'],['s60','S-60','Speed limit sign (60)'],['s40','S-40','Speed limit sign (40)'],['cam2','CAM 2','CCTV trailer'],['b4','B-1..6','Steel barrier · 220 m']];
+function statusPill(e){ if(e.needs) return e.status==='approved'?'<span class="pill p-ok">✓ Approved by RPM</span>':'<span class="pill p-plan">⏳ Sent for approval</span>'; return '<span class="pill p-sub">Logged · no RPM action</span>'; }
+function sevPill(s){ return '<span class="pill '+(s>=8?'p-bad':s>=5?'p-plan':'p-live')+'">sev '+s+'/10</span>'; }
+function liveView(p){
+  var evs=p.events.slice().reverse().map(function(e){ return '<div class="ev"><span class="t">'+esc(e.t)+'</span><div><div class="a">'+esc(e.a)+'</div><div class="b">'+esc(e.type)+' · by '+esc(e.by)+(e.equip.length?' · equipment: '+esc(e.equip.join(', ')):'')+'</div><div class="tags">'+sevPill(e.sev)+statusPill(e)+(e.workers&&e.workers!=='None'?'<span class="pill p-bad">Workers: '+esc(e.workers)+'</span>':'')+'</div></div></div>'; }).join('');
+  var panel='';
+  if(UI.side==='menu') panel='<div class="menu" id="actMenu"><button type="button" data-a="event"><b>Report an event</b><small>Impact, near miss, damage, queue. Goes to the snapshot; RPM approves if action is needed.</small></button><button type="button" data-a="assets"><b>Request additional assets</b><small>e.g. an extra light tower near the taper</small></button><button type="button" data-a="close"><small>Close</small></button></div>';
+  else if(UI.side==='event') panel=eventForm(p);
+  else if(UI.side==='assets') panel=assetReqForm();
+  else if(UI.sel){ var a=LIVE_ASSETS.filter(function(x){return x[0]===UI.sel;})[0]; if(a) panel='<div class="card"><h3>'+a[1]+' · '+a[2]+'</h3><span class="hint">Selected on the map. Is it damaged or does it need maintenance?</span><button class="btn dark" type="button" id="defect">Report a defect</button></div>'; }
+  return '<div class="work"><div class="mapbox"><iframe id="rpmap" src="Map-bend.html?embed=1&view=bend" title="Live map, Eastern Freeway at the Bulleen Bend"></iframe></div>'+
+   '<div class="side"><div class="eyebrow">Predicted vs actual · tonight · same view as RPM</div><div class="tiles"><div class="tile"><small>Avg speed</small><b style="color:var(--bad)">58</b> <span>plan 45</span></div><div class="tile"><small>Truck share</small><b>18%</b> <span>plan 20%</span></div><div class="tile"><small>Queue wait</small><b>3.5 min</b> <span>plan 4 min</span></div><div class="tile"><small>Cushion hits</small><b style="color:var(--bad)">1</b> <span>plan 0</span></div></div>'+
+   '<button class="btn pri" type="button" id="actions" aria-expanded="'+(UI.side==='menu')+'">Actions ▾</button>'+panel+
+   '<div class="card"><h3>Events <span class="hint" style="font-weight:400">tap an asset on the map to report a defect</span></h3>'+(evs||'<span class="hint">No events yet.</span>')+'</div>'+
+   '<p class="demo">Demo: approvals come from RPM. Open <a href="Live-v5.dc.html">RPM team › Live</a> in this browser and press Approve on your report, then come back.</p></div></div>';
+}
+function eventForm(p){ var pre=UI.defect||null;
+  return '<form class="card" id="evForm" novalidate><h3>'+(pre?'Report a defect · '+esc(pre):'Report an event')+'</h3>'+
+  '<div class="f"><label for="ev-type">Event type</label><select id="ev-type">'+['Equipment damaged or needs maintenance','Crash cushion impact','Near miss','Vehicle entered work area','Queue / traffic','Other'].map(function(o,i){return '<option'+((pre&&i===0)?' selected':'')+'>'+o+'</option>';}).join('')+'</select></div>'+
+  '<div class="f"><label for="ev-desc">What happened</label><textarea id="ev-desc" placeholder="e.g. Radar knocked over near the taper, facing the wrong way"></textarea></div>'+
+  '<div class="f"><span class="lab" id="sevlab">Severity</span><div class="sev"><input id="ev-sev" type="range" min="1" max="10" value="'+(pre?5:3)+'" aria-labelledby="sevlab"><b id="ev-sevv"></b></div><span class="hint">1 to 4 info · 5 to 7 warning · 8 to 10 critical</span></div>'+
+  '<div class="f"><span class="lab">Impact on workers</span><div class="seg">'+['None','Near miss','Minor injury','Serious injury'].map(function(o,i){return '<label><input type="radio" name="ev-w" value="'+o+'"'+(i===0?' checked':'')+'>'+o+'</label>';}).join('')+'</div></div>'+
+  '<div class="f"><span class="lab">Impaired equipment</span><div class="seg">'+LIVE_ASSETS.map(function(a){return '<label><input type="checkbox" name="ev-eq" value="'+a[1]+'"'+(pre===a[1]?' checked':'')+'>'+a[1]+'</label>';}).join('')+'</div></div>'+
+  '<div class="note" id="ev-route"></div><span class="err" id="ev-err" hidden>Describe what happened.</span>'+
+  '<div style="display:flex;gap:8px"><button class="btn dark" type="submit">Submit report</button><button class="btn" type="button" id="ev-cancel">Cancel</button></div></form>'; }
+function assetReqForm(){ return '<form class="card" id="arForm" novalidate><h3>Request additional assets</h3><div class="f"><label for="ar-k">Equipment</label><select id="ar-k">'+Object.keys(RATES).map(function(k){return '<option value="'+k+'">'+RATES[k][0]+' · '+fmt(RATES[k][1])+'/wk</option>';}).join('')+'</select></div><div class="grid2"><div class="f"><label for="ar-q">Quantity</label><input id="ar-q" type="number" min="1" value="1"></div><div class="f"><label for="ar-w">Where</label><input id="ar-w" placeholder="e.g. near the taper"></div></div><div class="f"><label for="ar-why">Why</label><textarea id="ar-why"></textarea></div><div style="display:flex;gap:8px"><button class="btn dark" type="submit">Send to RPM</button><button class="btn" type="button" id="ar-cancel">Cancel</button></div></form>'; }
+function needsRPM(type,sev,eq,w){ return eq.length>0 || sev>=6 || w!=='None' || /Crash cushion|Equipment|Vehicle entered/.test(type); }
+
+/* ---------- SNAPSHOT ---------- */
+function snapView(p){
+  var shown=p.events.filter(function(e){ return e.needs ? e.status==='approved' : true; });
+  var waiting=p.events.filter(function(e){ return e.needs && e.status!=='approved'; }).length;
+  var tl=shown.slice().reverse().map(function(e){ return '<div class="ev"><span class="t">'+esc(e.t)+'</span><div><div class="a">'+esc(e.a)+'</div><div class="b">'+esc(e.desc)+'</div><div class="tags">'+sevPill(e.sev)+(e.needs?'<span class="pill p-ok">RPM action · approved</span>':'<span class="pill p-sub">Logged by '+esc(e.by)+'</span>')+'</div></div></div>'; }).join('');
+  var notes=p.notes.slice().reverse().map(function(n){ return '<div class="ev"><span class="t" style="font-size:11px">'+esc(n.t.split(' ')[0]+' '+n.t.split(' ')[1])+'</span><div><div class="a" style="font-size:12px">'+esc(n.who)+'</div><div style="font-size:13px">'+esc(n.text)+'</div></div></div>'; }).join('');
+  return '<div class="snap"><div class="card"><h3>Project snapshot · '+p.id+'</h3><div class="tiles" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))"><div class="tile"><small>Nights worked</small><b>9</b> <span>of 21</span></div><div class="tile"><small>Avg speed at site</small><b>58</b> <span>posted 40</span></div><div class="tile"><small>Cushion hits</small><b>1</b> <span>replaced</span></div><div class="tile"><small>Events in snapshot</small><b>'+shown.length+'</b> <span>'+waiting+' waiting</span></div></div>'+
+   '<div class="eyebrow" style="margin-top:6px">Events</div><div class="timeline">'+(tl||'<span class="hint">No events yet.</span>')+'</div>'+(waiting?'<div class="note">'+waiting+' event'+(waiting>1?'s':'')+' waiting for RPM approval. '+(waiting>1?'They appear':'It appears')+' here once approved.</div>':'')+'</div>'+
+   '<div class="card"><h3>Team notes</h3><div class="timeline">'+(notes||'<span class="hint">No notes yet.</span>')+'</div><form id="noteForm" novalidate><div class="f"><label for="note-t">Add a note for the team</label><textarea id="note-t" placeholder="e.g. Crew changing to 10pm start from Monday"></textarea></div><button class="btn dark" type="submit">Add note</button></form></div></div>';
+}
+
+/* ---------- NEW REQUEST ---------- */
+function renderRequest(m){
+  var req=UI.req||(UI.req={});
+  m.innerHTML='<div class="page"><h2>New project request</h2><p class="hint" style="margin:0">RPM sales use this to draft your site plan. You will review and confirm it before anything is booked.</p>'+
+  '<form id="reqForm" novalidate>'+
+  '<div class="card"><h3>Site profile</h3><div class="f"><label for="r-loc">Location</label><input id="r-loc" required placeholder="e.g. Eastern Fwy outbound, Tram Rd to Springvale Rd"></div>'+
+  '<div class="grid2"><div class="f"><label for="r-road">Road type</label><select id="r-road"><option>Freeway</option><option>Arterial</option><option>Local</option></select></div><div class="f"><label for="r-lanes">Lanes closed</label><select id="r-lanes"><option>1 of 2</option><option selected>1 of 3</option><option>2 of 3</option><option>Full carriageway (detour)</option></select></div>'+
+  '<div class="f"><label for="r-norm">Normal speed (km/h)</label><input id="r-norm" type="number" value="100"></div><div class="f"><label for="r-post">Posted speed at works (km/h)</label><input id="r-post" type="number" value="40"></div>'+
+  '<div class="f"><label for="r-shift">Shift type</label><select id="r-shift"><option>Night</option><option>Day</option><option>24/7</option></select></div><div class="f"><label for="r-dur">Duration</label><input id="r-dur" value="2 weeks"></div></div></div>'+
+  '<div class="card"><h3>Assets required <span class="hint" style="font-weight:400">your best guess; RPM checks it against site evidence</span></h3><div class="assetgrid" id="r-assets"></div></div>'+
+  '<div class="card"><h3>Client details</h3><div class="grid2"><div class="f"><label for="r-co">Company</label><input id="r-co" value="'+esc(CLIENT_ORG)+'"></div><div class="f"><label for="r-name">Contact name</label><input id="r-name" value="Alex Morgan"></div><div class="f"><label for="r-phone">Phone</label><input id="r-phone" placeholder="04xx xxx xxx"></div><div class="f"><label for="r-email">Email</label><input id="r-email" type="email" placeholder="name@company.com.au"></div></div>'+
+  '<div class="f"><label for="r-desc">Description (optional)</label><textarea id="r-desc" placeholder="Anything RPM should know: access, trucks, crew size, deadlines"></textarea></div></div>'+
+  '<span class="err" id="r-err" hidden>Add the location so RPM knows where the site is.</span>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" type="submit">Submit request to RPM</button><button class="btn" type="button" id="r-cancel">Cancel</button></div></form></div>';
+  var qty=UI.qty||(UI.qty={water:0,steel:1,cushion:1,vms:1,vsl:2,cctv:1,radar:1,arrow:1,lights:0,tower:0});
+  var ag=document.getElementById('r-assets');
+  function drawAssets(){ ag.innerHTML=Object.keys(RATES).map(function(k){ return '<div class="step"><span>'+RATES[k][0].replace(' · 220 m','')+'</span><div><button type="button" data-k="'+k+'" data-d="-1" aria-label="Fewer '+RATES[k][0]+'">−</button><b>'+(qty[k]||0)+'</b><button type="button" data-k="'+k+'" data-d="1" aria-label="More '+RATES[k][0]+'">+</button></div></div>'; }).join('');
+    Array.prototype.forEach.call(ag.querySelectorAll('button'),function(b){ b.onclick=function(){ var k=b.dataset.k; qty[k]=Math.max(0,(qty[k]||0)+(+b.dataset.d)); drawAssets(); }; }); }
+  drawAssets();
+  document.getElementById('r-cancel').onclick=function(){ UI.view='project'; render(); };
+  document.getElementById('reqForm').onsubmit=function(e){ e.preventDefault(); var v=function(id){return document.getElementById(id).value.trim();};
+    if(!v('r-loc')){ document.getElementById('r-err').hidden=false; document.getElementById('r-loc').focus(); return; }
+    var id='CZ-00'+(DB.seq++); var items=[]; Object.keys(qty).forEach(function(k){ for(var i=0;i<qty[k];i++) items.push({id:k+i,k:k,ch:2000+i*80,off:-10}); });
+    DB.projects.push({id:id,name:v('r-loc'),stage:'request',org:v('r-co'),weeks:parseInt(v('r-dur'),10)||2,profile:{location:v('r-loc'),road:v('r-road'),normal:+v('r-norm')||100,posted:+v('r-post')||40,lanes:v('r-lanes'),shift:v('r-shift'),duration:v('r-dur')},contact:{name:v('r-name'),phone:v('r-phone'),email:v('r-email')},desc:v('r-desc'),items:items,amendments:[],events:[],notes:[]});
+    save(); UI.req=null; UI.qty=null; UI.pid=id; UI.view='project'; UI.tab='plan'; render(); toast(id+' sent to RPM sales. They will draft the plan.'); };
+}
+
+/* ---------- bindings ---------- */
+function $(id){return document.getElementById(id);}
+function nowT(){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function bindView(p){
+  if(UI.tab==='plan'){
+    if($('askConfirm')) $('askConfirm').onclick=function(){ UI.side='confirm'; render(); };
+    if($('cancelConfirm')) $('cancelConfirm').onclick=function(){ UI.side=null; render(); };
+    if($('doConfirm')) $('doConfirm').onclick=function(){ p.stage='confirmed'; p.confirmed=new Date().toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); UI.side=null; save(); render(); toast('Plan confirmed. RPM has been notified.'); };
+    $('askAmend').onclick=function(){ UI.side='amend'; UI.amendPre=''; render(); };
+    if($('amendThis')) $('amendThis').onclick=function(){ var it=p.items.filter(function(i){return i.id===UI.sel;})[0]; UI.side='amend'; UI.amendPre=BARS.indexOf(it.k)>=0?'Swap '+RATES[it.k][0].split(' · ')[0].toLowerCase()+' to steel':'Change '+RATES[it.k][0].toLowerCase(); render(); };
+    if($('amendForm')){ $('am-cancel').onclick=function(){ UI.side=null; render(); };
+      $('amendForm').onsubmit=function(e){ e.preventDefault(); var w=$('am-what').value.trim(); if(!w){ $('am-err').hidden=false; return; } p.amendments.push({t:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short'}),what:w,why:$('am-why').value.trim()||'No reason given',status:'Sent to RPM'}); UI.side=null; save(); render(); toast('Amendment sent to RPM.'); }; }
+    sendPlan(p);
+  }
+  if(UI.tab==='live'){
+    $('actions').onclick=function(){ UI.side=UI.side==='menu'?null:'menu'; render(); };
+    if($('actMenu')) Array.prototype.forEach.call($('actMenu').querySelectorAll('button'),function(b){ b.onclick=function(){ UI.side=b.dataset.a==='close'?null:b.dataset.a; UI.defect=null; render(); }; });
+    if($('defect')) $('defect').onclick=function(){ var a=LIVE_ASSETS.filter(function(x){return x[0]===UI.sel;})[0]; UI.defect=a[1]; UI.side='event'; render(); };
+    if($('evForm')){
+      var upd=function(){ var s=+$('ev-sev').value; $('ev-sevv').textContent=s+'/10'; var eq=Array.prototype.map.call(document.querySelectorAll('input[name=ev-eq]:checked'),function(x){return x.value;}); var w=document.querySelector('input[name=ev-w]:checked').value;
+        $('ev-route').innerHTML=needsRPM($('ev-type').value,s,eq,w)?'<b style="color:var(--ink)">Needs RPM action.</b> Goes to the RPM manager for approval, then into the snapshot.':'<b style="color:var(--ink)">No RPM action needed.</b> Logged straight into the snapshot.'; };
+      Array.prototype.forEach.call($('evForm').querySelectorAll('input,select'),function(x){ x.addEventListener('input',upd); x.addEventListener('change',upd); }); upd();
+      $('ev-cancel').onclick=function(){ UI.side=null; UI.defect=null; render(); };
+      $('evForm').onsubmit=function(e){ e.preventDefault(); var d=$('ev-desc').value.trim(); if(!d){ $('ev-err').hidden=false; $('ev-desc').focus(); return; }
+        var s=+$('ev-sev').value, eq=Array.prototype.map.call(document.querySelectorAll('input[name=ev-eq]:checked'),function(x){return x.value;}), w=document.querySelector('input[name=ev-w]:checked').value, ty=$('ev-type').value, nd=needsRPM(ty,s,eq,w);
+        p.events.push({id:'c'+Date.now(),t:nowT(),type:ty,a:(UI.defect?UI.defect+': ':'')+(d.length>60?d.slice(0,57)+'…':d),desc:d,sev:s,workers:w,equip:eq,by:'Client',needs:nd,status:nd?'pending':'logged'});
+        UI.side=null; UI.defect=null; UI.sel=null; save(); render(); toast(nd?'Sent to the RPM manager for approval.':'Logged in the project snapshot.'); };
+    }
+    if($('arForm')){ $('ar-cancel').onclick=function(){ UI.side=null; render(); };
+      $('arForm').onsubmit=function(e){ e.preventDefault(); var k=$('ar-k').value, q=+$('ar-q').value||1;
+        p.events.push({id:'c'+Date.now(),t:nowT(),type:'Additional assets',a:'Request: '+q+' × '+RATES[k][0]+($('ar-w').value.trim()?' · '+$('ar-w').value.trim():''),desc:$('ar-why').value.trim()||'Additional equipment requested',sev:2,workers:'None',equip:[],by:'Client',needs:true,status:'pending'});
+        UI.side=null; save(); render(); toast('Asset request sent to RPM for approval.'); }; }
+  }
+  if(UI.tab==='snapshot'){
+    $('noteForm').onsubmit=function(e){ e.preventDefault(); var t=$('note-t').value.trim(); if(!t) return; p.notes.push({t:new Date().toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' '+nowT(),who:'Alex Morgan (client)',text:t}); save(); render(); toast('Note added for the team.'); };
+  }
+}
+function planMsg(p){ var sc=score(p.items); var n={}; return { items:p.items.map(function(i){ var c=(n[i.k]=(n[i.k]||0)+1)+(p.items.some(function(x){return x.k===i.k&&x.path;})&&!i.path?1:0); return Object.assign({},i,{lbl:SHORT[i.k]+' '+c}); }),
+  barrierKey:(p.items.filter(function(i){return i.path;})[0]||{}).k||null, selK:null, selId:UI.sel, ok:sc.ok, lockedKinds:LOCKED, noAdd:true, readOnly:!editable(p) }; }
+function sendPlan(p){ var f=$('rpmap'); if(f&&f.contentWindow) f.contentWindow.postMessage({rpPlan:planMsg(p)},'*'); }
+window.addEventListener('message',function(e){ var d=e.data||{}, p=P(); if(!p||UI.view!=='project') return;
+  if(UI.tab==='plan'){
+    if(d.rpReady) sendPlan(p);
+    else if(d.rpMove && editable(p)){ p.items.forEach(function(i){ if(i.id===d.rpMove.id && LOCKED.indexOf(i.k)<0){ i.ch=d.rpMove.ch; i.off=d.rpMove.off; } }); save(); UI.sel=d.rpMove.id; render(); toast('Moved. RPM sees your change.'); }
+    else if(d.rpPickItem){ UI.sel=d.rpPickItem.id; render(); }
+    else if(d.rpPickBarrier){ var b=p.items.filter(function(i){return i.path;})[0]; if(b){ UI.sel=b.id; render(); } }
+    else if(d.rpDenied){ /* map already showed a message */ }
+  } else if(UI.tab==='live'){
+    if('rpPick' in d){ UI.sel=d.rpPick; if(UI.side!=='event') UI.side=null; render(); }
+  }
+});
+/* refresh when RPM approves in another tab (same browser) */
+window.addEventListener('storage',function(e){ if(e.key===KEY){ load(); render(); } });
+window.addEventListener('focus',function(){ var before=JSON.stringify(DB); load(); if(JSON.stringify(DB)!==before) render(); });
+var start=location.hash.replace('#','').toUpperCase(); openProject(DB.projects.some(function(p){return p.id===start;})?start:'CZ-0012');
+})();
+</script>
+</body>
+</html>
